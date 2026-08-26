@@ -20,6 +20,19 @@ public fun Game(
     MutableList(width * height) {
       CellState.Concealed as CellState
     }
+  val center = ((width - 1) / 2) + ((height - 1) / 2) * width
+
+  cells[center - width - 1] = CellState.RevealedMine
+  cells[center - width] = CellState.RevealedMine
+  cells[center - width + 1] = CellState.RevealedMine
+
+  cells[center - 1] = CellState.RevealedMine
+  cells[center] = CellState.Revealed8
+  cells[center + 1] = CellState.RevealedMine
+
+  cells[center + width - 1] = CellState.RevealedMine
+  cells[center + width] = CellState.RevealedMine
+  cells[center + width + 1] = CellState.RevealedMine
   context(cellPref) {
     Column(
       modifier = Modifier.fillMaxSize(),
