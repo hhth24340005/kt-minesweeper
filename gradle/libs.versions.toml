@@ -1,0 +1,32 @@
+[versions]
+kotlin = "2.4.10"
+coroutines = "1.11.0"
+serialization = "1.11.0"
+atomicfu = "0.33.0"
+datetime = "0.8.0"
+collections-immutable = "0.5.1"
+arrow = "2.2.3"
+kotlin-logging = "8.0.4"
+logback = "1.6.3"
+
+[libraries]
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+kotlinx-atomicfu = { group = "org.jetbrains.kotlinx", name = "atomicfu", version.ref = "atomicfu" }
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "datetime" }
+kotlinx-collections-immutable = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref = "collections-immutable" }
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
+kotlin-logging = { group = "io.github.oshai", name = "kotlin-logging", version.ref = "kotlin-logging"}
+logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
+
+[bundles]
+arrow = [
+  "arrow-core",
+  "arrow-fx-coroutines",
+]
+
+[plugins]
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlinx-atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "atomicfu" }
