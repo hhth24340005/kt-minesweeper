@@ -4,6 +4,7 @@ plugins {
   alias(libs.plugins.kotlin.multiplatform)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.compose)
+  alias(libs.plugins.compose.hotReload)
 }
 
 repositories {
@@ -15,6 +16,11 @@ kotlin {
   explicitApi()
 
   jvm()
+  jvmToolchain {
+    languageVersion = JavaLanguageVersion.of(25)
+    @Suppress("UnstableApiUsage")
+    vendor = JvmVendorSpec.JETBRAINS
+  }
 
   sourceSets {
     commonMain {
