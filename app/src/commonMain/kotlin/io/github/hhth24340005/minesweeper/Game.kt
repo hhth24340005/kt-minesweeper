@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
@@ -17,22 +19,26 @@ public fun Game(
   require(0 < width)
   require(0 < height)
   val cells =
-    MutableList(width * height) {
-      CellState.Concealed as CellState
+    remember {
+      val cells =
+        SnapshotStateList(width * height) {
+          CellState.Concealed as CellState
+        }
+      val center = ((width - 1) / 2) + ((height - 1) / 2) * width
+
+      cells[center - width - 1] = CellState.RevealedMine
+      cells[center - width] = CellState.RevealedMine
+      cells[center - width + 1] = CellState.RevealedMine
+
+      cells[center - 1] = CellState.RevealedMine
+      cells[center] = CellState.Revealed8
+      cells[center + 1] = CellState.RevealedMine
+
+      cells[center + width - 1] = CellState.RevealedMine
+      cells[center + width] = CellState.RevealedMine
+      cells[center + width + 1] = CellState.RevealedMine
+      cells
     }
-  val center = ((width - 1) / 2) + ((height - 1) / 2) * width
-
-  cells[center - width - 1] = CellState.RevealedMine
-  cells[center - width] = CellState.RevealedMine
-  cells[center - width + 1] = CellState.RevealedMine
-
-  cells[center - 1] = CellState.RevealedMine
-  cells[center] = CellState.Revealed8
-  cells[center + 1] = CellState.RevealedMine
-
-  cells[center + width - 1] = CellState.RevealedMine
-  cells[center + width] = CellState.RevealedMine
-  cells[center + width + 1] = CellState.RevealedMine
   context(cellPref) {
     Column(
       modifier = Modifier.fillMaxSize(),
@@ -41,9 +47,21 @@ public fun Game(
     ) {
       cells
         .chunked(width)
-        .forEach { row ->
+        .forEachIndexed { y, row ->
           Row {
-            row.forEach { it.draw() }
+            row.forEachIndexed { x, cell ->
+              cell.draw(
+                onLeftClick = {
+                  cells[x + y * width] = CellState.RevealedMine
+                },
+                onRightClick = {
+                  cells[x + y * width] = CellState.Marked
+                },
+                onMiddleClick = {
+                  cells[x + y * width] = CellState.Revealed0
+                },
+              )
+            }
           }
         }
     }
