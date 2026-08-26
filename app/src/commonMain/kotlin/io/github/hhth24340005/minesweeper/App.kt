@@ -1,3 +1,5 @@
+package io.github.hhth24340005.minesweeper
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize

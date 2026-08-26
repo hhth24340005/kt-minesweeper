@@ -44,7 +44,7 @@ kotlin {
 
 compose.desktop {
   application {
-    mainClass = "MainKt"
+    mainClass = "io.github.hhth24340005.minesweeper.MainKt"
 
     nativeDistributions {
       targetFormats(TargetFormat.Exe, TargetFormat.Dmg, TargetFormat.Deb)
