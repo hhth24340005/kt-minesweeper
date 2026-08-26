@@ -1,40 +1,48 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
   alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.compose.compiler)
+  alias(libs.plugins.compose)
 }
 
 repositories {
   mavenCentral()
+  google()
 }
 
 kotlin {
   explicitApi()
 
-  @OptIn(ExperimentalKotlinGradlePluginApi::class)
-  jvm {
-    val main = "MainKt"
-    binaries {
-      executable {
-        mainClass = main
-      }
-    }
-    mainRun {
-      mainClass = main
-    }
-  }
+  jvm()
 
   sourceSets {
     commonMain {
       dependencies {
         implementation(libs.kotlin.logging)
+        implementation(libs.compose.runtime)
+        implementation(libs.compose.foundation)
+        implementation(libs.compose.ui)
+        implementation(libs.compose.material3)
       }
     }
 
     jvmMain {
       dependencies {
+        implementation(compose.desktop.currentOs)
         runtimeOnly(libs.logback.classic)
       }
+    }
+  }
+}
+
+compose.desktop {
+  application {
+    mainClass = "MainKt"
+
+    nativeDistributions {
+      targetFormats(TargetFormat.Exe, TargetFormat.Dmg, TargetFormat.Deb)
+      modules("java.instrument", "jdk.unsupported")
     }
   }
 }
