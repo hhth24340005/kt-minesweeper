@@ -152,21 +152,22 @@ public sealed interface CellState {
 }
 
 @Composable
-context(pref: CellPreferences)
-public fun CellState.draw(
+public fun Cell(
+  state: CellState,
+  preferences: CellPreferences,
   onLeftClick: () -> Unit,
   onRightClick: () -> Unit,
   onMiddleClick: () -> Unit,
 ) {
   Box(
     Modifier
-      .size(pref.cellSize)
+      .size(preferences.cellSize)
       .clickable(onClick = onLeftClick)
       .onPointerEvent(cond = { it.isSecondaryPressed }, onRightClick)
       .onPointerEvent(cond = { it.isTertiaryPressed }, onMiddleClick),
   ) {
     Image(
-      bitmap = textureOf(pref),
+      bitmap = state.textureOf(preferences),
       contentDescription = "$this",
       modifier = Modifier.fillMaxSize(),
       filterQuality = FilterQuality.None,

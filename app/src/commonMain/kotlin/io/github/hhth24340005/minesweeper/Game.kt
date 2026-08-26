@@ -39,31 +39,31 @@ public fun Game(
       cells[center + width + 1] = CellState.RevealedMine
       cells
     }
-  context(cellPref) {
-    Column(
-      modifier = Modifier.fillMaxSize(),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-    ) {
-      cells
-        .chunked(width)
-        .forEachIndexed { y, row ->
-          Row {
-            row.forEachIndexed { x, cell ->
-              cell.draw(
-                onLeftClick = {
-                  cells[x + y * width] = CellState.RevealedMine
-                },
-                onRightClick = {
-                  cells[x + y * width] = CellState.Marked
-                },
-                onMiddleClick = {
-                  cells[x + y * width] = CellState.Revealed0
-                },
-              )
-            }
+  Column(
+    modifier = Modifier.fillMaxSize(),
+    horizontalAlignment = Alignment.CenterHorizontally,
+    verticalArrangement = Arrangement.Center,
+  ) {
+    cells
+      .chunked(width)
+      .forEachIndexed { y, row ->
+        Row {
+          row.forEachIndexed { x, cellState ->
+            Cell(
+              cellState,
+              cellPref,
+              onLeftClick = {
+                cells[x + y * width] = CellState.RevealedMine
+              },
+              onRightClick = {
+                cells[x + y * width] = CellState.Marked
+              },
+              onMiddleClick = {
+                cells[x + y * width] = CellState.Revealed0
+              },
+            )
           }
         }
-    }
+      }
   }
 }
