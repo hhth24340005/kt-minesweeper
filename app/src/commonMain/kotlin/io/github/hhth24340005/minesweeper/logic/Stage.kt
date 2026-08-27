@@ -1,18 +1,19 @@
 package io.github.hhth24340005.minesweeper.logic
 
+import kotlin.collections.contains
 import kotlin.random.Random
 
 public class Stage(
-  private val width: Int,
+  width: Int,
   height: Int,
   private val mineDensity: Double,
   private val random: Random = Random,
 ) {
-  private val cells: List<CellId> = List(width * height) { CellId() }
   private var isInitialized: Boolean = false
   private val mines: MutableSet<CellId> = mutableSetOf()
 
-  public val rows: List<List<CellId>> = cells.chunked(width)
+  public val rows: List<List<CellId>> =
+    List(height) { List(width) { CellId() } }
 
   init {
     require(0 < width)
@@ -65,10 +66,10 @@ public class Stage(
   private fun initialize(
     startingCell: CellId,
   ) {
-    val minesCount = (mineDensity * cells.size).toInt()
-    val candidates = cells.toMutableSet()
+    val candidates = rows.flatten().toMutableSet()
     candidates -= startingCell
     candidates -= startingCell.adjacentCells
+    val minesCount = (mineDensity * candidates.size).toInt()
     mines.addAll(candidates.shuffled(random).take(minesCount))
   }
 
