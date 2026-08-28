@@ -85,6 +85,22 @@ public class Stage(
     revealInner(cell, mutableSetOf())
   }
 
+  public fun toggleMark(
+    cell: Cell,
+  ) {
+    when (cell.state) {
+      is CellState.Concealed -> {
+        cell.state = CellState.Marked
+      }
+
+      is CellState.Marked -> {
+        cell.state = CellState.Concealed
+      }
+
+      else -> { }
+    }
+  }
+
   private fun initialize(
     startingCell: Cell,
   ) {
