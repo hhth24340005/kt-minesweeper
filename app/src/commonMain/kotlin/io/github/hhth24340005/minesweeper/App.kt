@@ -1,33 +1,46 @@
 package io.github.hhth24340005.minesweeper
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.Button
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import io.github.hhth24340005.minesweeper.resources.Res
+import io.github.hhth24340005.minesweeper.resources.cell_concealed
+import io.github.hhth24340005.minesweeper.resources.cell_marked
+import io.github.hhth24340005.minesweeper.resources.cell_revealed_0
+import io.github.hhth24340005.minesweeper.resources.cell_revealed_1
+import io.github.hhth24340005.minesweeper.resources.cell_revealed_2
+import io.github.hhth24340005.minesweeper.resources.cell_revealed_3
+import io.github.hhth24340005.minesweeper.resources.cell_revealed_4
+import io.github.hhth24340005.minesweeper.resources.cell_revealed_5
+import io.github.hhth24340005.minesweeper.resources.cell_revealed_6
+import io.github.hhth24340005.minesweeper.resources.cell_revealed_7
+import io.github.hhth24340005.minesweeper.resources.cell_revealed_8
+import io.github.hhth24340005.minesweeper.resources.cell_revealed_mine
+import org.jetbrains.compose.resources.imageResource
 
 @Composable
 @Preview
 public fun App() {
-  var count by remember { mutableStateOf(0) }
-
-  Column(
-    modifier = Modifier.fillMaxSize(),
-    horizontalAlignment = Alignment.CenterHorizontally,
-    verticalArrangement = Arrangement.Center,
-  ) {
-    Button(onClick = { count++ }) {
-      Text("Click me")
-    }
-
-    Text("You clicked the button $count times")
-  }
+  val cellPref =
+    CellPreferences(
+      cellSize = 64.dp,
+      textureConcealed = imageResource(Res.drawable.cell_concealed),
+      textureMarked = imageResource(Res.drawable.cell_marked),
+      textureRevealed0 = imageResource(Res.drawable.cell_revealed_0),
+      textureRevealed1 = imageResource(Res.drawable.cell_revealed_1),
+      textureRevealed2 = imageResource(Res.drawable.cell_revealed_2),
+      textureRevealed3 = imageResource(Res.drawable.cell_revealed_3),
+      textureRevealed4 = imageResource(Res.drawable.cell_revealed_4),
+      textureRevealed5 = imageResource(Res.drawable.cell_revealed_5),
+      textureRevealed6 = imageResource(Res.drawable.cell_revealed_6),
+      textureRevealed7 = imageResource(Res.drawable.cell_revealed_7),
+      textureRevealed8 = imageResource(Res.drawable.cell_revealed_8),
+      textureRevealedMine = imageResource(Res.drawable.cell_revealed_mine),
+    )
+  Game(
+    cellPref = cellPref,
+    width = 10,
+    height = 10,
+    mineDensity = 0.2,
+  )
 }
