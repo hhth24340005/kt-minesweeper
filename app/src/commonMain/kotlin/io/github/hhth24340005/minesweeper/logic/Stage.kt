@@ -1,6 +1,7 @@
 package io.github.hhth24340005.minesweeper.logic
 
 import kotlin.collections.contains
+import kotlin.math.ceil
 import kotlin.random.Random
 
 public class Stage(
@@ -69,7 +70,7 @@ public class Stage(
     val candidates = rows.flatten().toMutableSet()
     candidates -= startingCell
     candidates -= startingCell.adjacentCells
-    val minesCount = (mineDensity * candidates.size).toInt()
+    val minesCount = ceil(mineDensity * candidates.size).toInt()
     mines.addAll(candidates.shuffled(random).take(minesCount))
   }
 
