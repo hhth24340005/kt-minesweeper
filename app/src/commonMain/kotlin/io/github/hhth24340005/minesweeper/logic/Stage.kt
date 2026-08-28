@@ -1,5 +1,8 @@
 package io.github.hhth24340005.minesweeper.logic
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import kotlin.collections.contains
 import kotlin.math.ceil
 import kotlin.random.Random
@@ -37,12 +40,12 @@ public class Stage(
   height: Int,
   private val mineDensity: Double,
   private val random: Random = Random,
-) : Matrix<Stage.CellId> {
+) : Matrix<Stage.Cell> {
   private var isInitialized: Boolean = false
-  private val mines: MutableSet<CellId> = mutableSetOf()
+  private val mines: MutableSet<Cell> = mutableSetOf()
 
-  public override val rows: List<List<CellId>> =
-    List(height) { List(width) { CellId() } }
+  public override val rows: List<List<Cell>> =
+    List(height) { List(width) { Cell() } }
 
   init {
     require(0 < width)
@@ -51,7 +54,7 @@ public class Stage(
   }
 
   public fun reveal(
-    cell: CellId,
+    cell: Cell,
   ): RevealResult {
     if (!isInitialized) {
       initialize(cell)
@@ -62,8 +65,8 @@ public class Stage(
     }
 
     fun revealInner(
-      cell: CellId,
-      map: MutableMap<CellId, Int>,
+      cell: Cell,
+      map: MutableMap<Cell, Int>,
     ) {
       val minesAround = adjacentCellsOf(cell).count { it in mines }
       map[cell] = minesAround
@@ -77,28 +80,31 @@ public class Stage(
           revealInner(it, map)
         }
     }
-    val ret = mutableMapOf<CellId, Int>()
+    val ret = mutableMapOf<Cell, Int>()
     revealInner(cell, ret)
     return RevealResult.Revealed(ret.toMap())
   }
 
-  public class CellId
-
   public sealed interface RevealResult {
     public data object Exploded : RevealResult
 
-    public data class Revealed(val revealedCells: Map<CellId, Int>) :
+    public data class Revealed(val revealedCells: Map<Cell, Int>) :
       RevealResult
   }
 
   private fun initialize(
-    startingCell: CellId,
+    startingCell: Cell,
   ) {
     val candidates = rows.flatten().toMutableSet()
     candidates -= startingCell
     candidates -= adjacentCellsOf(startingCell)
     val minesCount = ceil(mineDensity * candidates.size).toInt()
     mines.addAll(candidates.shuffled(random).take(minesCount))
+  }
+
+  public class Cell internal constructor() {
+    public var state: CellState by mutableStateOf(CellState.Concealed)
+      internal set
   }
 }
 
