@@ -90,33 +90,49 @@ public class Stage private constructor(
   public fun reveal(
     cell: Cell,
   ) {
-    if (cell in mines) {
-      cell.state = CellState.RevealedMine
+    fun open(
+      cell: Cell,
+    ): Int? {
+      if (cell.state == CellState.Marked) {
+        return null
+      }
+      if (cell in mines) {
+        cell.state = CellState.RevealedMine
+        return null
+      }
+      val minesAround = adjacentCellsOf(cell).count { it in mines }
+      cell.state = CellState.revealedOf(minesAround)
+      return minesAround
+    }
+
+    if (cell.state.indicatedAdjacentMines != null) {
+      val adjacentCells = adjacentCellsOf(cell)
+      val adjacentMarked = adjacentCells.count { it.state == CellState.Marked }
+      if (cell.state.indicatedAdjacentMines == adjacentMarked) {
+        adjacentCells.forEach {
+          open(it)
+        }
+      }
       return
     }
 
-    fun revealInner(
-      cell: Cell,
-      visited: MutableSet<Cell>,
-    ) {
-      if (cell in visited) {
-        return
-      }
-      visited += cell
-      val minesAround = adjacentCellsOf(cell).count { it in mines }
-      cell.state = CellState.revealedOf(minesAround)
-      if (minesAround != 0) {
-        return
-      }
+    val visited = mutableSetOf<Cell>()
 
-      adjacentCellsOf(cell)
-        .filter { it !in visited }
-        .forEach {
-          revealInner(it, visited)
-        }
+    fun greedyOpen(
+      cell: Cell,
+    ) {
+      visited += cell
+      val adjacentMines = open(cell)
+      if (adjacentMines == 0) {
+        adjacentCellsOf(cell)
+          .filter { it !in visited }
+          .forEach {
+            greedyOpen(it)
+          }
+      }
     }
 
-    revealInner(cell, mutableSetOf())
+    greedyOpen(cell)
   }
 
   public fun toggleMark(
@@ -146,4 +162,18 @@ public interface UninitializedStage : Matrix<Cell> {
     startingCell: Cell,
   ): Stage
 }
+
+private val CellState.indicatedAdjacentMines: Int? get() =
+  when (this) {
+    is CellState.Revealed0 -> 0
+    is CellState.Revealed1 -> 1
+    is CellState.Revealed2 -> 2
+    is CellState.Revealed3 -> 3
+    is CellState.Revealed4 -> 4
+    is CellState.Revealed5 -> 5
+    is CellState.Revealed6 -> 6
+    is CellState.Revealed7 -> 7
+    is CellState.Revealed8 -> 8
+    else -> null
+  }
 
