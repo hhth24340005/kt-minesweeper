@@ -3,7 +3,6 @@ package io.github.hhth24340005.minesweeper.logic
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import kotlin.collections.contains
 import kotlin.math.ceil
 import kotlin.random.Random
 
@@ -55,41 +54,35 @@ public class Stage(
 
   public fun reveal(
     cell: Cell,
-  ): RevealResult {
+  ) {
     if (!isInitialized) {
       initialize(cell)
       isInitialized = true
     }
     if (cell in mines) {
-      return RevealResult.Exploded
+      cell.state = CellState.RevealedMine
+      return
     }
 
     fun revealInner(
       cell: Cell,
-      map: MutableMap<Cell, Int>,
+      visited: MutableSet<Cell>,
     ) {
+      visited += cell
       val minesAround = adjacentCellsOf(cell).count { it in mines }
-      map[cell] = minesAround
+      cell.state = CellState.revealedOf(minesAround)
       if (minesAround != 0) {
         return
       }
 
       adjacentCellsOf(cell)
-        .filter { it !in map }
+        .filter { it !in visited }
         .forEach {
-          revealInner(it, map)
+          revealInner(it, visited)
         }
     }
-    val ret = mutableMapOf<Cell, Int>()
-    revealInner(cell, ret)
-    return RevealResult.Revealed(ret.toMap())
-  }
 
-  public sealed interface RevealResult {
-    public data object Exploded : RevealResult
-
-    public data class Revealed(val revealedCells: Map<Cell, Int>) :
-      RevealResult
+    revealInner(cell, mutableSetOf())
   }
 
   private fun initialize(
