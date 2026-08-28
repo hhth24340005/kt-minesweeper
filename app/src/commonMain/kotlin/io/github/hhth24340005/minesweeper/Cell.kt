@@ -168,7 +168,7 @@ public fun Cell(
   ) {
     Image(
       bitmap = state.textureOf(preferences),
-      contentDescription = "$this",
+      contentDescription = "$state",
       modifier = Modifier.fillMaxSize(),
       filterQuality = FilterQuality.None,
     )
