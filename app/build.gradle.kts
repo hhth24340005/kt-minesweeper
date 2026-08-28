@@ -7,11 +7,6 @@ plugins {
   alias(libs.plugins.compose.hotReload)
 }
 
-repositories {
-  mavenCentral()
-  google()
-}
-
 kotlin {
   explicitApi()
 
@@ -25,6 +20,8 @@ kotlin {
   sourceSets {
     commonMain {
       dependencies {
+        implementation(project(":logic"))
+
         implementation(libs.kotlin.logging)
         implementation(libs.compose.runtime)
         implementation(libs.compose.foundation)
