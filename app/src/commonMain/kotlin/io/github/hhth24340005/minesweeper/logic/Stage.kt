@@ -116,23 +116,22 @@ public class Stage private constructor(
       return
     }
 
-    val visited = mutableSetOf<Cell>()
-
-    fun greedyOpen(
-      cell: Cell,
-    ) {
-      visited += cell
-      val adjacentMines = open(cell)
-      if (adjacentMines == 0) {
-        adjacentCellsOf(cell)
-          .filter { it !in visited }
-          .forEach {
-            greedyOpen(it)
-          }
+    run greedyOpen@{
+      val visited = mutableSetOf<Cell>()
+      val queue = mutableListOf(cell)
+      while (queue.isNotEmpty()) {
+        val cell = queue.removeFirst()
+        visited += cell
+        val adjacentMines = open(cell)
+        if (adjacentMines == 0) {
+          adjacentCellsOf(cell)
+            .filter { it !in visited }
+            .forEach {
+              queue.addFirst(it)
+            }
+        }
       }
     }
-
-    greedyOpen(cell)
   }
 
   public fun toggleMark(
