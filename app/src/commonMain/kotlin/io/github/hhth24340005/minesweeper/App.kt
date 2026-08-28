@@ -56,6 +56,8 @@ public fun App() {
     )
   Game(
     cellPreferences = cellPreferences,
-    stage = Stage.prepare(width = 10, height = 10, mineDensity = 0.2),
+    uninitializedStage =
+      Stage
+        .prepare(width = 10, height = 10, mineDensity = 0.2),
   )
 }

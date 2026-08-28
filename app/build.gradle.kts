@@ -7,11 +7,6 @@ plugins {
   alias(libs.plugins.compose.hotReload)
 }
 
-repositories {
-  mavenCentral()
-  google()
-}
-
 kotlin {
   explicitApi()
   compilerOptions {
@@ -28,7 +23,8 @@ kotlin {
   sourceSets {
     commonMain {
       dependencies {
-        implementation(libs.kotlinx.coroutines.core)
+        implementation(project(":logic"))
+
         implementation(libs.compose.runtime)
         implementation(libs.compose.foundation)
         implementation(libs.compose.ui)
