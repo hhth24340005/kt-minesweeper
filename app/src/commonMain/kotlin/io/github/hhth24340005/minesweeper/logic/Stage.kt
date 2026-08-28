@@ -1,8 +1,14 @@
+@file:OptIn(ExperimentalAtomicApi::class)
+
 package io.github.hhth24340005.minesweeper.logic
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import io.github.hhth24340005.minesweeper.logic.Stage.Cell
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.concurrent.atomics.updateAndFetch
 import kotlin.math.ceil
 import kotlin.random.Random
 
@@ -34,31 +40,56 @@ public interface Matrix<T> {
       }.toSet()
 }
 
-public class Stage(
-  width: Int,
-  height: Int,
-  private val mineDensity: Double,
-  private val random: Random = Random,
-) : Matrix<Stage.Cell> {
-  private var isInitialized: Boolean = false
-  private val mines: MutableSet<Cell> = mutableSetOf()
+public class Stage private constructor(
+  public override val rows: List<List<Cell>>,
+  private val mines: Set<Cell>,
+) : Matrix<Cell> {
+  public companion object {
+    public fun prepare(
+      width: Int,
+      height: Int,
+      mineDensity: Double,
+      random: Random = Random,
+    ): UninitializedStage {
+      val rows = List(height) { List(width) { Cell() } }
 
-  public override val rows: List<List<Cell>> =
-    List(height) { List(width) { Cell() } }
+      return object :
+        UninitializedStage {
+        override val rows: List<List<Cell>> = rows
+        var stage = AtomicReference<Stage?>(null)
+
+        public override fun getOrInit(
+          startingCell: Cell,
+        ): Stage =
+          stage.updateAndFetch {
+            if (it != null) {
+              return@updateAndFetch it
+            }
+            val candidates =
+              buildList {
+                addAll(
+                  rows.flatten() -
+                    startingCell -
+                    adjacentCellsOf(startingCell),
+                )
+                shuffle(random)
+              }
+            val minesCount = ceil(mineDensity * candidates.size).toInt()
+            val mines = candidates.take(minesCount).toSet()
+            Stage(rows, mines)
+          }!!
+      }
+    }
+  }
 
   init {
-    require(0 < width)
-    require(0 < height)
-    require(mineDensity in 0.0..1.0)
+    require(rows.isNotEmpty())
+    require(rows.all { it.isNotEmpty() })
   }
 
   public fun reveal(
     cell: Cell,
   ) {
-    if (!isInitialized) {
-      initialize(cell)
-      isInitialized = true
-    }
     if (cell in mines) {
       cell.state = CellState.RevealedMine
       return
@@ -68,6 +99,9 @@ public class Stage(
       cell: Cell,
       visited: MutableSet<Cell>,
     ) {
+      if (cell in visited) {
+        return
+      }
       visited += cell
       val minesAround = adjacentCellsOf(cell).count { it in mines }
       cell.state = CellState.revealedOf(minesAround)
@@ -101,19 +135,15 @@ public class Stage(
     }
   }
 
-  private fun initialize(
-    startingCell: Cell,
-  ) {
-    val candidates = rows.flatten().toMutableSet()
-    candidates -= startingCell
-    candidates -= adjacentCellsOf(startingCell)
-    val minesCount = ceil(mineDensity * candidates.size).toInt()
-    mines.addAll(candidates.shuffled(random).take(minesCount))
-  }
-
   public class Cell internal constructor() {
     public var state: CellState by mutableStateOf(CellState.Concealed)
       internal set
   }
+}
+
+public interface UninitializedStage : Matrix<Cell> {
+  public fun getOrInit(
+    startingCell: Cell,
+  ): Stage
 }
 
