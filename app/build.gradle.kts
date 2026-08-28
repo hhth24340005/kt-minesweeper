@@ -22,7 +22,6 @@ kotlin {
       dependencies {
         implementation(project(":logic"))
 
-        implementation(libs.kotlin.logging)
         implementation(libs.compose.runtime)
         implementation(libs.compose.foundation)
         implementation(libs.compose.ui)
@@ -33,7 +32,6 @@ kotlin {
     jvmMain {
       dependencies {
         implementation(compose.desktop.currentOs)
-        runtimeOnly(libs.logback.classic)
       }
     }
   }
