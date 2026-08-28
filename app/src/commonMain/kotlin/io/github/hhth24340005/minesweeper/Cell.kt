@@ -15,141 +15,12 @@ import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.isTertiaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
+import io.github.hhth24340005.minesweeper.logic.CellState
 
 public data class CellPreferences(
   val cellSize: Dp,
-  val textureConcealed: ImageBitmap,
-  val textureMarked: ImageBitmap,
-  val textureRevealed0: ImageBitmap,
-  val textureRevealed1: ImageBitmap,
-  val textureRevealed2: ImageBitmap,
-  val textureRevealed3: ImageBitmap,
-  val textureRevealed4: ImageBitmap,
-  val textureRevealed5: ImageBitmap,
-  val textureRevealed6: ImageBitmap,
-  val textureRevealed7: ImageBitmap,
-  val textureRevealed8: ImageBitmap,
-  val textureRevealedMine: ImageBitmap,
+  val imageBitmapOf: @Composable (CellState) -> ImageBitmap,
 )
-
-public sealed interface CellState {
-  public companion object {
-    public fun revealedOfFromMinesAround(
-      value: Int,
-    ): CellState =
-      when (value) {
-        0 -> Revealed0
-
-        1 -> Revealed1
-
-        2 -> Revealed2
-
-        3 -> Revealed3
-
-        4 -> Revealed4
-
-        5 -> Revealed5
-
-        6 -> Revealed6
-
-        7 -> Revealed7
-
-        8 -> Revealed8
-
-        else -> throw IllegalArgumentException(
-          "Only 0-8 are allowed but got: $value",
-        )
-      }
-  }
-
-  public fun textureOf(
-    pref: CellPreferences,
-  ): ImageBitmap
-
-  public data object Concealed : CellState {
-    override fun textureOf(
-      pref: CellPreferences,
-    ): ImageBitmap =
-      pref.textureConcealed
-  }
-
-  public data object Marked : CellState {
-    override fun textureOf(
-      pref: CellPreferences,
-    ): ImageBitmap =
-      pref.textureMarked
-  }
-
-  public data object Revealed0 : CellState {
-    override fun textureOf(
-      pref: CellPreferences,
-    ): ImageBitmap =
-      pref.textureRevealed0
-  }
-
-  public data object Revealed1 : CellState {
-    override fun textureOf(
-      pref: CellPreferences,
-    ): ImageBitmap =
-      pref.textureRevealed1
-  }
-
-  public data object Revealed2 : CellState {
-    override fun textureOf(
-      pref: CellPreferences,
-    ): ImageBitmap =
-      pref.textureRevealed2
-  }
-
-  public data object Revealed3 : CellState {
-    override fun textureOf(
-      pref: CellPreferences,
-    ): ImageBitmap =
-      pref.textureRevealed3
-  }
-
-  public data object Revealed4 : CellState {
-    override fun textureOf(
-      pref: CellPreferences,
-    ): ImageBitmap =
-      pref.textureRevealed4
-  }
-
-  public data object Revealed5 : CellState {
-    override fun textureOf(
-      pref: CellPreferences,
-    ): ImageBitmap =
-      pref.textureRevealed5
-  }
-
-  public data object Revealed6 : CellState {
-    override fun textureOf(
-      pref: CellPreferences,
-    ): ImageBitmap =
-      pref.textureRevealed6
-  }
-
-  public data object Revealed7 : CellState {
-    override fun textureOf(
-      pref: CellPreferences,
-    ): ImageBitmap =
-      pref.textureRevealed7
-  }
-
-  public data object Revealed8 : CellState {
-    override fun textureOf(
-      pref: CellPreferences,
-    ): ImageBitmap =
-      pref.textureRevealed8
-  }
-
-  public data object RevealedMine : CellState {
-    override fun textureOf(
-      pref: CellPreferences,
-    ): ImageBitmap =
-      pref.textureRevealedMine
-  }
-}
 
 @Composable
 public fun Cell(
@@ -167,8 +38,8 @@ public fun Cell(
       .onPointerEvent(cond = { it.isTertiaryPressed }, onMiddleClick),
   ) {
     Image(
-      bitmap = state.textureOf(preferences),
-      contentDescription = "$this",
+      bitmap = preferences.imageBitmapOf(state),
+      contentDescription = "$state",
       modifier = Modifier.fillMaxSize(),
       filterQuality = FilterQuality.None,
     )
