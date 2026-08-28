@@ -26,9 +26,9 @@ public data class CellPreferences(
 public fun Cell(
   state: CellState,
   preferences: CellPreferences,
-  onLeftClick: () -> Unit,
-  onRightClick: () -> Unit,
-  onMiddleClick: () -> Unit,
+  onLeftClick: () -> Unit = {},
+  onRightClick: () -> Unit = {},
+  onMiddleClick: () -> Unit = {},
 ) {
   Box(
     Modifier

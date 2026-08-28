@@ -33,7 +33,6 @@ public fun Game(
               onRightClick = {
                 stage.getOrInit(cell).toggleMark(cell)
               },
-              onMiddleClick = { },
             )
           }
         }
