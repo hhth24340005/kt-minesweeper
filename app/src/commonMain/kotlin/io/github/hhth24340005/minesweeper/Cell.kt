@@ -23,9 +23,9 @@ public data class CellPreferences(
 )
 
 @Composable
+context(preferences: CellPreferences)
 public fun Cell(
   state: CellState,
-  preferences: CellPreferences,
   onLeftClick: () -> Unit = {},
   onRightClick: () -> Unit = {},
   onMiddleClick: () -> Unit = {},

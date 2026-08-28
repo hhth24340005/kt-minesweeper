@@ -14,6 +14,9 @@ repositories {
 
 kotlin {
   explicitApi()
+  compilerOptions {
+    freeCompilerArgs.add("-Xexplicit-context-arguments")
+  }
 
   jvm()
   jvmToolchain {

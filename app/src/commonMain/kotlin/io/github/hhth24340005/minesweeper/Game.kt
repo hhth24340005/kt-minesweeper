@@ -10,8 +10,8 @@ import androidx.compose.ui.Modifier
 import io.github.hhth24340005.minesweeper.logic.UninitializedStage
 
 @Composable
+context(cellPreferences: CellPreferences)
 public fun Game(
-  cellPref: CellPreferences,
   stage: UninitializedStage,
 ) {
   Column(
@@ -26,7 +26,6 @@ public fun Game(
           row.forEach { cell ->
             Cell(
               cell.state,
-              cellPref,
               onLeftClick = {
                 stage.getOrInit(cell).reveal(cell)
               },

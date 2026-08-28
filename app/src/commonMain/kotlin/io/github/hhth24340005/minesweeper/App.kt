@@ -34,7 +34,7 @@ import org.jetbrains.compose.resources.imageResource
 @Composable
 @Preview
 public fun App() {
-  val cellPref =
+  val cellPreferences =
     CellPreferences(
       cellSize = 64.dp,
       imageBitmapOf = { state ->
@@ -55,7 +55,7 @@ public fun App() {
       },
     )
   Game(
-    cellPref = cellPref,
+    cellPreferences = cellPreferences,
     stage = Stage.prepare(width = 10, height = 10, mineDensity = 0.2),
   )
 }
