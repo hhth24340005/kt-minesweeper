@@ -1,14 +1,9 @@
-@file:OptIn(ExperimentalAtomicApi::class)
-
 package io.github.hhth24340005.minesweeper.logic
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import io.github.hhth24340005.minesweeper.logic.Stage.Cell
-import kotlin.concurrent.atomics.AtomicReference
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
-import kotlin.concurrent.atomics.updateAndFetch
 import kotlin.math.ceil
 import kotlin.random.Random
 
@@ -51,33 +46,37 @@ public class Stage private constructor(
       mineDensity: Double,
       random: Random = Random,
     ): UninitializedStage {
-      val rows = List(height) { List(width) { Cell() } }
+      val rows =
+        List(height) { List(width) { UninitializedStage.UninitializedCell() } }
 
       return object :
         UninitializedStage {
-        override val rows: List<List<Cell>> = rows
-        var stage = AtomicReference<Stage?>(null)
+        override val rows = rows
 
-        public override fun getOrInit(
-          startingCell: Cell,
-        ): Stage =
-          stage.updateAndFetch {
-            if (it != null) {
-              return@updateAndFetch it
+        public override fun initialize(
+          startingCell: UninitializedStage.UninitializedCell,
+        ): Stage {
+          val cellOf = rows.flatten().associateWith { Cell() }
+          val cellRows = rows.map { row -> row.map { cellOf[it]!! } }
+          val candidates =
+            buildList {
+              addAll(
+                rows.flatten() -
+                  startingCell -
+                  adjacentCellsOf(startingCell),
+              )
+              shuffle(random)
             }
-            val candidates =
-              buildList {
-                addAll(
-                  rows.flatten() -
-                    startingCell -
-                    adjacentCellsOf(startingCell),
-                )
-                shuffle(random)
-              }
-            val minesCount = ceil(mineDensity * candidates.size).toInt()
-            val mines = candidates.take(minesCount).toSet()
-            Stage(rows, mines)
-          }!!
+          val minesCount = ceil(mineDensity * candidates.size).toInt()
+          val mines =
+            candidates
+              .take(minesCount)
+              .map { cellOf[it]!! }
+              .toSet()
+          return Stage(cellRows, mines).also {
+            it.reveal(cellOf[startingCell]!!)
+          }
+        }
       }
     }
   }
@@ -156,10 +155,13 @@ public class Stage private constructor(
   }
 }
 
-public interface UninitializedStage : Matrix<Cell> {
-  public fun getOrInit(
-    startingCell: Cell,
+public interface UninitializedStage :
+  Matrix<UninitializedStage.UninitializedCell> {
+  public fun initialize(
+    startingCell: UninitializedCell,
   ): Stage
+
+  public class UninitializedCell
 }
 
 private val CellState.indicatedAdjacentMines: Int? get() =
@@ -175,4 +177,3 @@ private val CellState.indicatedAdjacentMines: Int? get() =
     is CellState.Revealed8 -> 8
     else -> null
   }
-
