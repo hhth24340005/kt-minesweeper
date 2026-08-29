@@ -38,20 +38,22 @@ public fun App() {
     CellPreferences(
       cellSize = 64.dp,
       imageBitmapOf = { state ->
-        when (state) {
-          is Concealed -> imageResource(Res.drawable.cell_concealed)
-          is Marked -> imageResource(Res.drawable.cell_marked)
-          is Revealed0 -> imageResource(Res.drawable.cell_revealed_0)
-          is Revealed1 -> imageResource(Res.drawable.cell_revealed_1)
-          is Revealed2 -> imageResource(Res.drawable.cell_revealed_2)
-          is Revealed3 -> imageResource(Res.drawable.cell_revealed_3)
-          is Revealed4 -> imageResource(Res.drawable.cell_revealed_4)
-          is Revealed5 -> imageResource(Res.drawable.cell_revealed_5)
-          is Revealed6 -> imageResource(Res.drawable.cell_revealed_6)
-          is Revealed7 -> imageResource(Res.drawable.cell_revealed_7)
-          is Revealed8 -> imageResource(Res.drawable.cell_revealed_8)
-          is RevealedMine -> imageResource(Res.drawable.cell_revealed_mine)
-        }
+        val resource =
+          when (state) {
+            is Concealed -> Res.drawable.cell_concealed
+            is Marked -> Res.drawable.cell_marked
+            is Revealed0 -> Res.drawable.cell_revealed_0
+            is Revealed1 -> Res.drawable.cell_revealed_1
+            is Revealed2 -> Res.drawable.cell_revealed_2
+            is Revealed3 -> Res.drawable.cell_revealed_3
+            is Revealed4 -> Res.drawable.cell_revealed_4
+            is Revealed5 -> Res.drawable.cell_revealed_5
+            is Revealed6 -> Res.drawable.cell_revealed_6
+            is Revealed7 -> Res.drawable.cell_revealed_7
+            is Revealed8 -> Res.drawable.cell_revealed_8
+            is RevealedMine -> Res.drawable.cell_revealed_mine
+          }
+        imageResource(resource)
       },
     )
   Game(
