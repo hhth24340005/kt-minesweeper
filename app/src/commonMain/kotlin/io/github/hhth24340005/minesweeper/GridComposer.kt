@@ -4,6 +4,10 @@ package io.github.hhth24340005.minesweeper
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -31,6 +36,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import io.github.hhth24340005.minesweeper.logic.CellState
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
 import io.github.hhth24340005.minesweeper.resources.Res
@@ -210,11 +216,42 @@ private class HexGridComposer : GridComposer {
           onBufferOverflow = BufferOverflow.DROP_OLDEST,
         )
       }
+    val interaction = remember { MutableInteractionSource() }
+    val isHovered by interaction.collectIsHoveredAsState()
+    val background =
+      if (isHovered) {
+        when (cellState) {
+          is CellState.Concealed,
+          -> {
+            Color.Cyan.copy(alpha = 0.3f)
+          }
+
+          is CellState.Marked,
+          -> {
+            Color.Magenta.copy(alpha = 0.3f)
+          }
+
+          is CellState.ConcealedMine,
+          is CellState.Revealed0,
+          -> {
+            Color.Transparent
+          }
+
+          else -> {
+            Color.Yellow.copy(alpha = 0.3f)
+          }
+        }
+      } else {
+        Color.Transparent
+      }
     Box(
       modifier =
         Modifier
           .size(width, height)
           .clip(HexagonShape)
+          .hoverable(interaction)
+          .background(background)
+          .border(1.dp, background, HexagonShape)
           .leftClickable {
             flow.tryEmit(PointerButton.Primary)
           }.rightClickable {
