@@ -21,6 +21,8 @@ public sealed interface CellState {
 
   public data object Concealed : CellState
 
+  public data object ConcealedMine : CellState
+
   public data object Marked : CellState
 
   public data object Revealed0 : CellState

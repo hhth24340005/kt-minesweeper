@@ -57,8 +57,8 @@ public class MinesweeperStage private constructor(
         return null
       }
       if (cell in mines) {
+        lose()
         cell.status = CellState.RevealedMine
-        status = Status.Lose
         return null
       }
       val minesAround = grid.adjacentCellsOf(cell).count { it in mines }
@@ -129,6 +129,13 @@ public class MinesweeperStage private constructor(
 
   public suspend fun awaitLose() {
     snapshotFlow { status }.first { it == Status.Lose }
+  }
+
+  private fun lose() {
+    status = Status.Lose
+    mines.forEach {
+      it.status = CellState.ConcealedMine
+    }
   }
 
   public class Cell internal constructor() {
