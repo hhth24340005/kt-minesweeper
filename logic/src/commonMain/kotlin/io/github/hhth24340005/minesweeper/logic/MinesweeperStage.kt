@@ -1,8 +1,11 @@
 package io.github.hhth24340005.minesweeper.logic
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.first
 import kotlin.math.ceil
 import kotlin.random.Random
 
@@ -32,6 +35,16 @@ public class MinesweeperStage private constructor(
 
   public val rows: List<List<Cell>> get() = grid.rows
 
+  public var marked: Int by mutableIntStateOf(0)
+    private set
+
+  public var status: Status by mutableStateOf(Status.Playing)
+    private set
+
+  private val cellCount = grid.rows.sumOf { it.size }
+
+  private var revealed: Int = 0
+
   public fun reveal(
     cell: Cell,
   ) {
@@ -45,10 +58,15 @@ public class MinesweeperStage private constructor(
       }
       if (cell in mines) {
         cell.status = CellState.RevealedMine
+        status = Status.Lose
         return null
       }
       val minesAround = grid.adjacentCellsOf(cell).count { it in mines }
       cell.status = CellState.revealedOf(minesAround)
+      revealed++
+      if (cellCount - revealed <= mines.size) {
+        status = Status.Win
+      }
       return minesAround
     }
 
@@ -105,6 +123,14 @@ public class MinesweeperStage private constructor(
     }
   }
 
+  public suspend fun awaitWin() {
+    snapshotFlow { status }.first { it == Status.Win }
+  }
+
+  public suspend fun awaitLose() {
+    snapshotFlow { status }.first { it == Status.Lose }
+  }
+
   public class Cell internal constructor() {
     public var status: CellState by mutableStateOf(CellState.Concealed)
       internal set
@@ -149,5 +175,11 @@ public class MinesweeperStage private constructor(
     }
 
     public class Cell internal constructor()
+  }
+
+  public enum class Status {
+    Playing,
+    Win,
+    Lose,
   }
 }
