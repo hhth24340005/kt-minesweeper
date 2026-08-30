@@ -107,6 +107,15 @@ public class HexGrid<T> private constructor(
     }.toSet()
   }
 
+  override fun <R> map(
+    transform: (T) -> R,
+  ): Grid<R> =
+    HexGrid(
+      rows.map { row ->
+        row.map(transform)
+      },
+    )
+
   public override fun toString(): String =
     "HexGrid($width x $height)@${hashCode()}"
 

@@ -80,6 +80,15 @@ public class SquareGrid<T> private constructor(
       }.toSet()
   }
 
+  override fun <R> map(
+    transform: (T) -> R,
+  ): Grid<R> =
+    SquareGrid(
+      rows.map { row ->
+        row.map(transform)
+      },
+    )
+
   public override fun toString(): String =
     "SquareGrid($width x $height)@${hashCode()}"
 

@@ -3,36 +3,15 @@ package io.github.hhth24340005.minesweeper.logic
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import io.github.hhth24340005.minesweeper.logic.SquareStage.Cell
 import kotlin.math.ceil
 import kotlin.random.Random
 
-public class SquareStage private constructor(
-  rows: List<List<Cell>>,
+
+public class MinesweeperStage private constructor(
+  gridDelegate: Grid<Cell>,
   private val mines: Set<Cell>,
-) : Stage<CellState, Cell>,
-  Grid<Cell> by SquareGrid(rows) {
-  public companion object {
-    public fun prepare(
-      width: Int,
-      height: Int,
-      mineDensity: Double,
-      random: Random = Random,
-    ): Uninitialized =
-      Uninitialized(
-        width = width,
-        height = height,
-        mineDensity = mineDensity,
-        random = random,
-      )
-  }
-
-  init {
-    require(rows.isNotEmpty())
-    require(rows.all { it.isNotEmpty() })
-  }
-
-  public override fun reveal(
+) : Grid<MinesweeperStage.Cell> by gridDelegate {
+  public fun reveal(
     cell: Cell,
   ) {
     fun open(
@@ -82,7 +61,7 @@ public class SquareStage private constructor(
     }
   }
 
-  public override fun toggleMark(
+  public fun toggleMark(
     cell: Cell,
   ) {
     when (cell.status) {
@@ -94,36 +73,37 @@ public class SquareStage private constructor(
         cell.status = CellState.Concealed
       }
 
-      else -> { }
+      else -> {}
     }
   }
 
-  public class Cell : Stage.Cell<CellState> {
-    override var status: CellState by mutableStateOf(CellState.Concealed)
+  public class Cell internal constructor() {
+    public var status: CellState by mutableStateOf(CellState.Concealed)
+      internal set
   }
 
   public class Uninitialized internal constructor(
-    width: Int,
-    height: Int,
+    private val grid: Grid<Cell>,
     private val mineDensity: Double,
     private val random: Random,
-  ) : UninitializedStage<Uninitialized.Cell, CellState, Cell>,
-    Grid<Uninitialized.Cell> by SquareGrid(width, height, { _, _ -> Cell() }) {
+  ) {
     init {
       require(mineDensity in 0.0..1.0)
     }
 
-    public override fun initialize(
-      startingCell: Uninitialized.Cell,
-    ): SquareStage {
-      val cellOf = rows.flatten().associateWith { SquareStage.Cell() }
-      val cellRows = rows.map { row -> row.map { cellOf[it]!! } }
+    public fun initialize(
+      startingCell: Cell,
+    ): MinesweeperStage {
+      val cellOf =
+        grid.rows
+          .flatten()
+          .associateWith { MinesweeperStage.Cell() }
       val candidates =
         buildList {
           addAll(
-            rows.flatten() -
+            grid.rows.flatten() -
               startingCell -
-              adjacentCellsOf(startingCell),
+              grid.adjacentCellsOf(startingCell),
           )
           shuffle(random)
         }
@@ -133,7 +113,7 @@ public class SquareStage private constructor(
           .take(minesCount)
           .map { cellOf[it]!! }
           .toSet()
-      return SquareStage(cellRows, mines).also {
+      return MinesweeperStage(grid.map { cellOf[it]!! }, mines).also {
         it.reveal(cellOf[startingCell]!!)
       }
     }

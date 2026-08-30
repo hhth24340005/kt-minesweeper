@@ -16,4 +16,8 @@ public interface Grid<T> {
   public fun adjacentCellsOf(
     cell: T,
   ): Set<T>
+
+  public fun <R> map(
+    transform: (T) -> R,
+  ): Grid<R>
 }
