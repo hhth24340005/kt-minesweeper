@@ -9,7 +9,7 @@ SCRIPT_DIR = os.path.dirname(__file__)
 OUTPUT_DIR = os.path.join(SCRIPT_DIR, "../../app/src/commonMain/composeResources/drawable")
 FONT_PATH = os.path.join(SCRIPT_DIR, "fonts/Tektur-Bold.ttf")
 
-R = 44
+R = 53
 PAD = 0.5
 HEX_W = math.ceil(2 * R * math.cos(math.radians(30)) + PAD * 2)
 HEX_H = math.ceil(2 * R + PAD * 2)
