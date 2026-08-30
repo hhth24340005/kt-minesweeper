@@ -49,8 +49,7 @@ public class Stage private constructor(
       val rows =
         List(height) { List(width) { UninitializedStage.UninitializedCell() } }
 
-      return object :
-        UninitializedStage {
+      return object : UninitializedStage {
         override val rows = rows
 
         public override fun initialize(
