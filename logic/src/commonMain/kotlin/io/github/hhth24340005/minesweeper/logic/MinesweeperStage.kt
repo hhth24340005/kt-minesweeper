@@ -8,9 +8,11 @@ import kotlin.random.Random
 
 
 public class MinesweeperStage private constructor(
-  gridDelegate: Grid<Cell>,
+  private val grid: Grid<Cell>,
   private val mines: Set<Cell>,
-) : Grid<MinesweeperStage.Cell> by gridDelegate {
+) {
+  public val rows: List<List<Cell>> get() = grid.rows
+
   public fun reveal(
     cell: Cell,
   ) {
@@ -24,13 +26,13 @@ public class MinesweeperStage private constructor(
         cell.status = CellState.RevealedMine
         return null
       }
-      val minesAround = adjacentCellsOf(cell).count { it in mines }
+      val minesAround = grid.adjacentCellsOf(cell).count { it in mines }
       cell.status = CellState.revealedOf(minesAround)
       return minesAround
     }
 
     if (cell.status.indicatedAdjacentMines != null) {
-      val adjacentCells = adjacentCellsOf(cell)
+      val adjacentCells = grid.adjacentCellsOf(cell)
       val adjacentMarked =
         adjacentCells.count {
           it.status == CellState.Marked
@@ -51,7 +53,7 @@ public class MinesweeperStage private constructor(
         visited += cell
         val adjacentMines = open(cell)
         if (adjacentMines == 0) {
-          adjacentCellsOf(cell)
+          grid.adjacentCellsOf(cell)
             .filter { it !in visited }
             .forEach {
               queue.addFirst(it)
@@ -90,6 +92,8 @@ public class MinesweeperStage private constructor(
     init {
       require(mineDensity in 0.0..1.0)
     }
+
+    public val rows: List<List<Cell>> get() = grid.rows
 
     public fun initialize(
       startingCell: Cell,
