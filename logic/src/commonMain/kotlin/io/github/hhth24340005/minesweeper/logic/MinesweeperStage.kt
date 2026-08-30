@@ -38,7 +38,9 @@ public class MinesweeperStage private constructor(
     fun open(
       cell: Cell,
     ): Int? {
-      if (cell.status == CellState.Marked) {
+      if (cell.status == CellState.Marked ||
+        cell.status.indicatedAdjacentMines != null
+      ) {
         return null
       }
       if (cell in mines) {
@@ -50,23 +52,11 @@ public class MinesweeperStage private constructor(
       return minesAround
     }
 
-    if (cell.status.indicatedAdjacentMines != null) {
-      val adjacentCells = grid.adjacentCellsOf(cell)
-      val adjacentMarked =
-        adjacentCells.count {
-          it.status == CellState.Marked
-        }
-      if (cell.status.indicatedAdjacentMines == adjacentMarked) {
-        adjacentCells.forEach {
-          open(it)
-        }
-      }
-      return
-    }
-
-    run greedyOpen@{
+    fun greedyOpen(
+      start: Cell,
+    ) {
       val visited = mutableSetOf<Cell>()
-      val queue = mutableListOf(cell)
+      val queue = mutableListOf(start)
       while (queue.isNotEmpty()) {
         val cell = queue.removeFirst()
         visited += cell
@@ -81,6 +71,22 @@ public class MinesweeperStage private constructor(
         }
       }
     }
+
+    if (cell.status.indicatedAdjacentMines != null) {
+      val adjacentCells = grid.adjacentCellsOf(cell)
+      val adjacentMarked =
+        adjacentCells.count {
+          it.status == CellState.Marked
+        }
+      if (cell.status.indicatedAdjacentMines == adjacentMarked) {
+        adjacentCells.forEach {
+          greedyOpen(it)
+        }
+      }
+      return
+    }
+
+    greedyOpen(cell)
   }
 
   public fun toggleMark(
