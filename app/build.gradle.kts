@@ -15,7 +15,7 @@ kotlin {
 
   jvm()
   jvmToolchain {
-    languageVersion = JavaLanguageVersion.of(25)
+    languageVersion = JavaLanguageVersion.of(21)
     @Suppress("UnstableApiUsage")
     vendor = JvmVendorSpec.JETBRAINS
   }
