@@ -41,26 +41,3 @@ public fun <T> hexGridOf(
     ::hexOffsets,
   )
 }
-
-public fun <T> hexGridOf(
-  rows: List<List<T>>,
-): Grid<T> {
-  val width = rows.maxOf { it.size }
-  require(1 < width)
-  return Grid(
-    rows
-      .mapIndexed { y, row ->
-        if (y % 2 == 0) {
-          require(
-            row.size == width - 1,
-          ) { "All rows at even index must have the same width" }
-        } else {
-          require(
-            row.size == width,
-          ) { "All rows at odd index must have the same width" }
-        }
-        row.toImmutableList()
-      }.toImmutableList(),
-    ::hexOffsets,
-  )
-}

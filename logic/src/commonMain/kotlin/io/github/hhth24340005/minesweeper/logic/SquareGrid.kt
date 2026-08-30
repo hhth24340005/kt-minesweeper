@@ -24,17 +24,3 @@ public fun <T> squareGridOf(
     }.toImmutableList(),
   ) { squareOffsets }
 }
-
-public fun <T> squareGridOf(
-  rows: List<List<T>>,
-): Grid<T> {
-  val width = rows.maxOf { it.size }
-  require(0 < width)
-  return Grid(
-    rows
-      .map {
-        require(it.size == width) { "All rows must have the same width" }
-        it.toImmutableList()
-      }.toImmutableList(),
-  ) { squareOffsets }
-}
