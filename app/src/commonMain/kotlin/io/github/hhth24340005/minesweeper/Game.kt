@@ -2,11 +2,9 @@ package io.github.hhth24340005.minesweeper
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.input.pointer.PointerButton
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.firstOrNull
 
 @Composable
 public fun Game(
@@ -25,10 +23,10 @@ public fun Game(
         }
       val stage = uninitializedStage.initialize(clickedCell)
       layer0<Nothing> {
-        val coroutine = rememberCoroutineScope()
-        gridComposer
-          .Grid(stage.rows)
-          .onEach { (click, cell) ->
+        val clicks = gridComposer.Grid(stage.rows)
+        LaunchedEffect(clicks) {
+          while (true) {
+            val (click, cell) = clicks.firstOrNull() ?: break
             when (click) {
               PointerButton.Primary -> {
                 stage.reveal(cell)
@@ -38,7 +36,8 @@ public fun Game(
                 stage.toggleMark(cell)
               }
             }
-          }.launchIn(coroutine)
+          }
+        }
       }
     }
   }

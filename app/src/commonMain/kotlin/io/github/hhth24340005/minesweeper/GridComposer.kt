@@ -42,6 +42,7 @@ import io.github.hhth24340005.minesweeper.resources.hex_number_8
 import io.github.hhth24340005.minesweeper.resources.hex_revealed
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -112,7 +113,13 @@ private class HexGridComposer : GridComposer {
   private fun <T : Any> Grid(
     rows: List<List<Pair<CellState, T>>>,
   ): Flow<Pair<PointerButton, T>> {
-    val ret = remember { MutableSharedFlow<Pair<PointerButton, T>>() }
+    val ret =
+      remember {
+        MutableSharedFlow<Pair<PointerButton, T>>(
+          extraBufferCapacity = 1,
+          onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
+      }
     val paddingX =
       maxOf(
         vectorResource(Res.drawable.hex_revealed).defaultWidth / 4f,
@@ -192,7 +199,13 @@ private class HexGridComposer : GridComposer {
     val height = images.maxOf { it.defaultHeight }
 
     val coroutine = rememberCoroutineScope()
-    val flow = remember { MutableSharedFlow<PointerButton>() }
+    val flow =
+      remember {
+        MutableSharedFlow<PointerButton>(
+          extraBufferCapacity = 1,
+          onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
+      }
     Box(
       modifier =
         Modifier
