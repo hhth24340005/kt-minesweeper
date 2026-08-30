@@ -14,13 +14,41 @@ public class SquareGrid<T>(
     List(height) { y ->
       List(width) { x ->
         init(x, y)
-      }
-    },
+      }.toImmutableList()
+    }.toImmutableList(),
   )
 
   public constructor(
     rows: List<List<T>>,
-  ) : this(rows.map { it.toImmutableList() }.toImmutableList())
+  ) : this(
+    run {
+      val width = rows.maxOf { it.size }
+      require(0 < width)
+      rows
+        .map {
+          require(it.size == width) { "All rows must have the same width" }
+          it.toImmutableList()
+        }.toImmutableList()
+    },
+  )
+
+  private val cellToPos: Map<T, Pair<Int, Int>> =
+    rows
+      .flatMapIndexed { y, row ->
+        row.mapIndexed { x, cell ->
+          cell to (x to y)
+        }
+      }.toMap()
+
+  override fun rowOf(
+    cell: T,
+  ): Int =
+    cellToPos[cell]!!.second
+
+  override fun columnOf(
+    cell: T,
+  ): Int =
+    cellToPos[cell]!!.first
 
   override fun adjacentCellsOf(
     cell: T,
