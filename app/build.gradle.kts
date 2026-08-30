@@ -9,10 +9,13 @@ plugins {
 
 kotlin {
   explicitApi()
+  compilerOptions {
+    freeCompilerArgs.add("-Xexplicit-context-arguments")
+  }
 
   jvm()
   jvmToolchain {
-    languageVersion = JavaLanguageVersion.of(25)
+    languageVersion = JavaLanguageVersion.of(21)
     @Suppress("UnstableApiUsage")
     vendor = JvmVendorSpec.JETBRAINS
   }
@@ -26,6 +29,7 @@ kotlin {
         implementation(libs.compose.foundation)
         implementation(libs.compose.ui)
         implementation(libs.compose.material3)
+        implementation(libs.compose.components.resources)
       }
     }
 
@@ -46,4 +50,9 @@ compose.desktop {
       modules("java.instrument", "jdk.unsupported")
     }
   }
+}
+
+compose.resources {
+  packageOfResClass = "io.github.hhth24340005.minesweeper.resources"
+  generateResClass = auto
 }
