@@ -14,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -48,7 +47,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.vectorResource
 
 public interface GridComposer {
@@ -198,7 +196,6 @@ private class HexGridComposer : GridComposer {
     val width = images.maxOf { it.defaultWidth }
     val height = images.maxOf { it.defaultHeight }
 
-    val coroutine = rememberCoroutineScope()
     val flow =
       remember {
         MutableSharedFlow<PointerButton>(
@@ -211,9 +208,9 @@ private class HexGridComposer : GridComposer {
         Modifier
           .size(width, height)
           .leftClickable {
-            coroutine.launch { flow.emit(PointerButton.Primary) }
+            flow.tryEmit(PointerButton.Primary)
           }.rightClickable {
-            coroutine.launch { flow.emit(PointerButton.Secondary) }
+            flow.tryEmit(PointerButton.Secondary)
           },
     ) {
       images.forEach {
