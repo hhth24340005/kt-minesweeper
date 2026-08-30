@@ -7,11 +7,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -24,12 +29,14 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
+import kotlin.time.Clock
 import kotlin.use
 
 @Composable
 public fun Game(
   gridComposer: GridComposer,
   uninitializedStage: MinesweeperStage.Uninitialized,
+  clock: Clock = Clock.System,
 ): Deferred<GameResult> {
   val deferred =
     remember(uninitializedStage) {
@@ -113,6 +120,44 @@ public fun Game(
                 }
               parentJob.cancelAndJoin()
               completeGame(result)
+            }
+            Box(
+              modifier = Modifier.fillMaxSize(),
+              contentAlignment = Alignment.TopEnd,
+            ) {
+              val startInstant = remember { clock.now() }
+              var elapsed by remember { mutableLongStateOf(0) }
+              val elapsedText =
+                remember(elapsed) {
+                  val hours = (elapsed / 3600)
+                  val minutes = ((elapsed % 3600) / 60)
+                  val seconds = (elapsed % 60)
+
+                  val minutesText = "%02d".format(minutes)
+                  val secondsText = "%02d".format(seconds)
+
+                  if (0 < hours) {
+                    val hoursText = "%02d".format(hours)
+                    "${hoursText}h ${minutesText}m ${secondsText}s"
+                  } else {
+                    "${minutesText}m ${secondsText}s"
+                  }
+                }
+
+              LaunchedEffect(Unit) {
+                while (true) {
+                  withFrameMillis {}
+                  elapsed = (clock.now() - startInstant).inWholeSeconds
+                }
+              }
+
+              Text(
+                text = elapsedText,
+                color = Color.LightGray,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 1.5.em,
+                modifier = Modifier.padding(5.dp),
+              )
             }
             Box(
               modifier = Modifier.fillMaxSize(),
