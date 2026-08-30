@@ -8,9 +8,9 @@ import kotlin.math.ceil
 import kotlin.random.Random
 
 public class Stage private constructor(
-  public override val rows: List<List<Cell>>,
+  rows: List<List<Cell>>,
   private val mines: Set<Cell>,
-) : Grid<Cell> {
+) : Grid<Cell> by SquareGrid(rows) {
   public companion object {
     public fun prepare(
       width: Int,
@@ -21,9 +21,9 @@ public class Stage private constructor(
       val rows =
         List(height) { List(width) { UninitializedStage.UninitializedCell() } }
 
-      return object : UninitializedStage {
-        override val rows = rows
-
+      return object :
+        UninitializedStage,
+        Grid<UninitializedStage.UninitializedCell> by SquareGrid(rows) {
         public override fun initialize(
           startingCell: UninitializedStage.UninitializedCell,
         ): Stage {
