@@ -35,15 +35,18 @@ public class MinesweeperStage private constructor(
 
   public val rows: List<List<Cell>> get() = grid.rows
 
-  public var marked: Int by mutableIntStateOf(0)
+  public val cellCount: Int = grid.rows.sumOf { it.size }
+
+  public var revealedCount: Int by mutableIntStateOf(0)
+    private set
+
+  public val mineCount: Int get() = mines.size
+
+  public var markedCount: Int by mutableIntStateOf(0)
     private set
 
   public var status: Status by mutableStateOf(Status.Playing)
     private set
-
-  private val cellCount = grid.rows.sumOf { it.size }
-
-  private var revealed: Int = 0
 
   public fun reveal(
     cell: Cell,
@@ -63,8 +66,8 @@ public class MinesweeperStage private constructor(
       }
       val minesAround = grid.adjacentCellsOf(cell).count { it in mines }
       cell.status = CellState.revealedOf(minesAround)
-      revealed++
-      if (cellCount - revealed <= mines.size) {
+      revealedCount++
+      if (cellCount - revealedCount <= mines.size) {
         status = Status.Win
       }
       return minesAround
