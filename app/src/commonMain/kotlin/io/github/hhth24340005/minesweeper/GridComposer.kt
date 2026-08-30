@@ -18,12 +18,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import io.github.hhth24340005.minesweeper.logic.CellState
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
 import io.github.hhth24340005.minesweeper.resources.Res
@@ -207,6 +214,7 @@ private class HexGridComposer : GridComposer {
       modifier =
         Modifier
           .size(width, height)
+          .clip(HexagonShape)
           .leftClickable {
             flow.tryEmit(PointerButton.Primary)
           }.rightClickable {
@@ -222,6 +230,27 @@ private class HexGridComposer : GridComposer {
       }
     }
     return flow.asSharedFlow()
+  }
+
+  private object HexagonShape : Shape {
+    override fun createOutline(
+      size: Size,
+      layoutDirection: LayoutDirection,
+      density: Density,
+    ): Outline {
+      val (width, height) = size
+      val path =
+        Path().apply {
+          moveTo(width / 2f, 0f)
+          lineTo(width, height / 4f)
+          lineTo(width, height * 3f / 4f)
+          lineTo(width / 2f, height)
+          lineTo(0f, height * 3f / 4f)
+          lineTo(0f, height / 4f)
+          close()
+        }
+      return Outline.Generic(path)
+    }
   }
 }
 
