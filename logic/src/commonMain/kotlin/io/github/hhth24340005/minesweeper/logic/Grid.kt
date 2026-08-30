@@ -1,15 +1,19 @@
 package io.github.hhth24340005.minesweeper.logic
 
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
 public class Grid<T>(
-  public val rows: ImmutableList<ImmutableList<T>>,
+  rows: List<List<T>>,
   private val adjacencyOffsets: (y: Int) -> Set<Pair<Int, Int>>,
 ) {
   init {
     require(rows.isNotEmpty() && rows.all { it.isNotEmpty() })
   }
+
+  public val rows: List<List<T>> =
+    rows
+      .map { it.toImmutableList() }
+      .toImmutableList()
 
   private val cellToPos: Map<T, Pair<Int, Int>> =
     rows
