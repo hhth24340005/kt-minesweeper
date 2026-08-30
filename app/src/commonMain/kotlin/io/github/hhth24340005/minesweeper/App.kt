@@ -16,7 +16,7 @@ import io.github.hhth24340005.minesweeper.logic.CellState.Revealed7
 import io.github.hhth24340005.minesweeper.logic.CellState.Revealed8
 import io.github.hhth24340005.minesweeper.logic.CellState.RevealedMine
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
-import io.github.hhth24340005.minesweeper.logic.squareGridOf
+import io.github.hhth24340005.minesweeper.logic.hexGridOf
 import io.github.hhth24340005.minesweeper.resources.Res
 import io.github.hhth24340005.minesweeper.resources.cell_concealed
 import io.github.hhth24340005.minesweeper.resources.cell_marked
@@ -61,9 +61,9 @@ public fun App() {
     cellPreferences = cellPreferences,
     uninitializedStage =
       MinesweeperStage.prepare(
-        width = 10,
-        height = 10,
-        gridFactory = ::squareGridOf,
+        width = 9,
+        height = 9,
+        gridFactory = ::hexGridOf,
         mineDensity = 0.2,
       ),
   )
