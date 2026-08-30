@@ -188,15 +188,15 @@ private class HexGridComposer : GridComposer {
     cellState: CellState,
   ): Flow<PointerButton> {
     val images = cellImages(cellState)
-    val maxWidth = images.maxOf { it.defaultWidth }
-    val maxHeight = images.maxOf { it.defaultHeight }
+    val width = images.maxOf { it.defaultWidth }
+    val height = images.maxOf { it.defaultHeight }
 
     val coroutine = rememberCoroutineScope()
     val flow = remember { MutableSharedFlow<PointerButton>() }
     Box(
       modifier =
         Modifier
-          .size(width = maxWidth, height = maxHeight)
+          .size(width, height)
           .leftClickable {
             coroutine.launch { flow.emit(PointerButton.Primary) }
           }.rightClickable {
@@ -211,92 +211,8 @@ private class HexGridComposer : GridComposer {
         )
       }
     }
-    return flow
+    return flow.asSharedFlow()
   }
-
-  @Composable
-  private fun cellImages(
-    state: CellState,
-  ): List<ImageVector> =
-    when (state) {
-      CellState.Concealed -> {
-        listOf(vectorResource(Res.drawable.hex_concealed))
-      }
-
-      CellState.Marked -> {
-        listOf(
-          vectorResource(Res.drawable.hex_concealed),
-          vectorResource(Res.drawable.hex_flag),
-        )
-      }
-
-      CellState.Revealed0 -> {
-        listOf(vectorResource(Res.drawable.hex_revealed))
-      }
-
-      CellState.Revealed1 -> {
-        listOf(
-          vectorResource(Res.drawable.hex_revealed),
-          vectorResource(Res.drawable.hex_number_1),
-        )
-      }
-
-      CellState.Revealed2 -> {
-        listOf(
-          vectorResource(Res.drawable.hex_revealed),
-          vectorResource(Res.drawable.hex_number_2),
-        )
-      }
-
-      CellState.Revealed3 -> {
-        listOf(
-          vectorResource(Res.drawable.hex_revealed),
-          vectorResource(Res.drawable.hex_number_3),
-        )
-      }
-
-      CellState.Revealed4 -> {
-        listOf(
-          vectorResource(Res.drawable.hex_revealed),
-          vectorResource(Res.drawable.hex_number_4),
-        )
-      }
-
-      CellState.Revealed5 -> {
-        listOf(
-          vectorResource(Res.drawable.hex_revealed),
-          vectorResource(Res.drawable.hex_number_5),
-        )
-      }
-
-      CellState.Revealed6 -> {
-        listOf(
-          vectorResource(Res.drawable.hex_revealed),
-          vectorResource(Res.drawable.hex_number_6),
-        )
-      }
-
-      CellState.Revealed7 -> {
-        listOf(
-          vectorResource(Res.drawable.hex_revealed),
-          vectorResource(Res.drawable.hex_number_7),
-        )
-      }
-
-      CellState.Revealed8 -> {
-        listOf(
-          vectorResource(Res.drawable.hex_revealed),
-          vectorResource(Res.drawable.hex_number_8),
-        )
-      }
-
-      CellState.RevealedMine -> {
-        listOf(
-          vectorResource(Res.drawable.hex_revealed),
-          vectorResource(Res.drawable.hex_mine),
-        )
-      }
-    }
 }
 
 private fun Modifier.leftClickable(
@@ -323,5 +239,89 @@ private fun Modifier.clickable(
           onClick()
         }
       }
+    }
+  }
+
+@Composable
+private fun cellImages(
+  state: CellState,
+): List<ImageVector> =
+  when (state) {
+    CellState.Concealed -> {
+      listOf(vectorResource(Res.drawable.hex_concealed))
+    }
+
+    CellState.Marked -> {
+      listOf(
+        vectorResource(Res.drawable.hex_concealed),
+        vectorResource(Res.drawable.hex_flag),
+      )
+    }
+
+    CellState.Revealed0 -> {
+      listOf(vectorResource(Res.drawable.hex_revealed))
+    }
+
+    CellState.Revealed1 -> {
+      listOf(
+        vectorResource(Res.drawable.hex_revealed),
+        vectorResource(Res.drawable.hex_number_1),
+      )
+    }
+
+    CellState.Revealed2 -> {
+      listOf(
+        vectorResource(Res.drawable.hex_revealed),
+        vectorResource(Res.drawable.hex_number_2),
+      )
+    }
+
+    CellState.Revealed3 -> {
+      listOf(
+        vectorResource(Res.drawable.hex_revealed),
+        vectorResource(Res.drawable.hex_number_3),
+      )
+    }
+
+    CellState.Revealed4 -> {
+      listOf(
+        vectorResource(Res.drawable.hex_revealed),
+        vectorResource(Res.drawable.hex_number_4),
+      )
+    }
+
+    CellState.Revealed5 -> {
+      listOf(
+        vectorResource(Res.drawable.hex_revealed),
+        vectorResource(Res.drawable.hex_number_5),
+      )
+    }
+
+    CellState.Revealed6 -> {
+      listOf(
+        vectorResource(Res.drawable.hex_revealed),
+        vectorResource(Res.drawable.hex_number_6),
+      )
+    }
+
+    CellState.Revealed7 -> {
+      listOf(
+        vectorResource(Res.drawable.hex_revealed),
+        vectorResource(Res.drawable.hex_number_7),
+      )
+    }
+
+    CellState.Revealed8 -> {
+      listOf(
+        vectorResource(Res.drawable.hex_revealed),
+        vectorResource(Res.drawable.hex_number_8),
+      )
+    }
+
+    CellState.RevealedMine -> {
+      listOf(
+        vectorResource(Res.drawable.hex_revealed),
+        vectorResource(Res.drawable.hex_mine),
+      )
     }
   }
