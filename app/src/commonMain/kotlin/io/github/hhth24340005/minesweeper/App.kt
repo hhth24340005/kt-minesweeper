@@ -15,7 +15,8 @@ import io.github.hhth24340005.minesweeper.logic.CellState.Revealed6
 import io.github.hhth24340005.minesweeper.logic.CellState.Revealed7
 import io.github.hhth24340005.minesweeper.logic.CellState.Revealed8
 import io.github.hhth24340005.minesweeper.logic.CellState.RevealedMine
-import io.github.hhth24340005.minesweeper.logic.Stage
+import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
+import io.github.hhth24340005.minesweeper.logic.squareGridOf
 import io.github.hhth24340005.minesweeper.resources.Res
 import io.github.hhth24340005.minesweeper.resources.cell_concealed
 import io.github.hhth24340005.minesweeper.resources.cell_marked
@@ -59,7 +60,11 @@ public fun App() {
   Game(
     cellPreferences = cellPreferences,
     uninitializedStage =
-      Stage
-        .prepare(width = 10, height = 10, mineDensity = 0.2),
+      MinesweeperStage.prepare(
+        width = 10,
+        height = 10,
+        gridFactory = ::squareGridOf,
+        mineDensity = 0.2,
+      ),
   )
 }

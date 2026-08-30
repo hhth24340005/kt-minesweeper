@@ -8,19 +8,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import io.github.hhth24340005.minesweeper.logic.CellState
-import io.github.hhth24340005.minesweeper.logic.Matrix
-import io.github.hhth24340005.minesweeper.logic.UninitializedStage
+import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
 
 @Composable
 context(cellPreferences: CellPreferences)
 public fun Game(
-  uninitializedStage: UninitializedStage,
+  uninitializedStage: MinesweeperStage.Uninitialized,
 ) {
   LaunchedRenderer(uninitializedStage) {
     layerOf().use { layer0 ->
       val stage =
         layer0 { complete ->
-          uninitializedStage.renderCells { cell ->
+          uninitializedStage.rows.renderCells { cell ->
             Cell(
               CellState.Concealed,
               onLeftClick = {
@@ -30,9 +29,9 @@ public fun Game(
           }
         }
       layer0<Nothing> {
-        stage.renderCells { cell ->
+        stage.rows.renderCells { cell ->
           Cell(
-            cell.state,
+            cell.status,
             onLeftClick = {
               stage.reveal(cell)
             },
@@ -47,7 +46,7 @@ public fun Game(
 }
 
 @Composable
-private fun <T> Matrix<T>.renderCells(
+private fun <T> List<List<T>>.renderCells(
   cell: @Composable (T) -> Unit,
 ) {
   Column(
@@ -55,7 +54,7 @@ private fun <T> Matrix<T>.renderCells(
     horizontalAlignment = Alignment.CenterHorizontally,
     verticalArrangement = Arrangement.Center,
   ) {
-    rows.forEach { row ->
+    forEach { row ->
       Row {
         row.forEach {
           cell(it)
