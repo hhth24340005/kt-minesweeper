@@ -10,7 +10,7 @@ import kotlin.random.Random
 public class SquareStage private constructor(
   rows: List<List<Cell>>,
   private val mines: Set<Cell>,
-) : Stage<Cell>,
+) : Stage<CellState, Cell>,
   Grid<Cell> by SquareGrid(rows) {
   public companion object {
     public fun prepare(
@@ -18,41 +18,12 @@ public class SquareStage private constructor(
       height: Int,
       mineDensity: Double,
       random: Random = Random,
-    ): UninitializedStage<UninitializedCell> {
-      val rows =
-        List(height) { List(width) { UninitializedCell() } }
-
-      return object :
-        UninitializedStage<UninitializedCell>,
-        Grid<UninitializedCell> by SquareGrid(rows) {
-        public override fun initialize(
-          startingCell: UninitializedCell,
-        ): SquareStage {
-          val cellOf = rows.flatten().associateWith { Cell() }
-          val cellRows = rows.map { row -> row.map { cellOf[it]!! } }
-          val candidates =
-            buildList {
-              addAll(
-                rows.flatten() -
-                  startingCell -
-                  adjacentCellsOf(startingCell),
-              )
-              shuffle(random)
-            }
-          val minesCount = ceil(mineDensity * candidates.size).toInt()
-          val mines =
-            candidates
-              .take(minesCount)
-              .map { cellOf[it]!! }
-              .toSet()
-          return SquareStage(cellRows, mines).also {
-            it.reveal(cellOf[startingCell]!!)
-          }
-        }
-      }
-    }
-
-    public class UninitializedCell internal constructor()
+    ): Uninitialized =
+      Uninitialized(
+        rows = List(height) { List(width) { Uninitialized.Cell() } },
+        mineDensity = mineDensity,
+        random = random,
+      )
   }
 
   init {
@@ -66,22 +37,25 @@ public class SquareStage private constructor(
     fun open(
       cell: Cell,
     ): Int? {
-      if (cell.state == CellState.Marked) {
+      if (cell.status == CellState.Marked) {
         return null
       }
       if (cell in mines) {
-        cell.state = CellState.RevealedMine
+        cell.status = CellState.RevealedMine
         return null
       }
       val minesAround = adjacentCellsOf(cell).count { it in mines }
-      cell.state = CellState.revealedOf(minesAround)
+      cell.status = CellState.revealedOf(minesAround)
       return minesAround
     }
 
-    if (cell.state.indicatedAdjacentMines != null) {
+    if (cell.status.indicatedAdjacentMines != null) {
       val adjacentCells = adjacentCellsOf(cell)
-      val adjacentMarked = adjacentCells.count { it.state == CellState.Marked }
-      if (cell.state.indicatedAdjacentMines == adjacentMarked) {
+      val adjacentMarked =
+        adjacentCells.count {
+          it.status == CellState.Marked
+        }
+      if (cell.status.indicatedAdjacentMines == adjacentMarked) {
         adjacentCells.forEach {
           open(it)
         }
@@ -110,21 +84,58 @@ public class SquareStage private constructor(
   public override fun toggleMark(
     cell: Cell,
   ) {
-    when (cell.state) {
+    when (cell.status) {
       is CellState.Concealed -> {
-        cell.state = CellState.Marked
+        cell.status = CellState.Marked
       }
 
       is CellState.Marked -> {
-        cell.state = CellState.Concealed
+        cell.status = CellState.Concealed
       }
 
       else -> { }
     }
   }
 
-  public class Cell internal constructor() {
-    public var state: CellState by mutableStateOf(CellState.Concealed)
-      internal set
+  public class Cell : Stage.Cell<CellState> {
+    override var status: CellState by mutableStateOf(CellState.Concealed)
+  }
+
+  public class Uninitialized internal constructor(
+    rows: List<List<Uninitialized.Cell>>,
+    private val mineDensity: Double,
+    private val random: Random,
+  ) : UninitializedStage<Uninitialized.Cell, CellState, Cell>,
+    Grid<Uninitialized.Cell> by SquareGrid(rows) {
+    init {
+      require(mineDensity in 0.0..1.0)
+    }
+
+    public override fun initialize(
+      startingCell: Uninitialized.Cell,
+    ): SquareStage {
+      val cellOf = rows.flatten().associateWith { SquareStage.Cell() }
+      val cellRows = rows.map { row -> row.map { cellOf[it]!! } }
+      val candidates =
+        buildList {
+          addAll(
+            rows.flatten() -
+              startingCell -
+              adjacentCellsOf(startingCell),
+          )
+          shuffle(random)
+        }
+      val minesCount = ceil(mineDensity * candidates.size).toInt()
+      val mines =
+        candidates
+          .take(minesCount)
+          .map { cellOf[it]!! }
+          .toSet()
+      return SquareStage(cellRows, mines).also {
+        it.reveal(cellOf[startingCell]!!)
+      }
+    }
+
+    public class Cell internal constructor()
   }
 }
