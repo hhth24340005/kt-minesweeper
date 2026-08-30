@@ -134,17 +134,3 @@ public interface UninitializedStage :
 
   public class UninitializedCell
 }
-
-private val CellState.indicatedAdjacentMines: Int? get() =
-  when (this) {
-    is CellState.Revealed0 -> 0
-    is CellState.Revealed1 -> 1
-    is CellState.Revealed2 -> 2
-    is CellState.Revealed3 -> 3
-    is CellState.Revealed4 -> 4
-    is CellState.Revealed5 -> 5
-    is CellState.Revealed6 -> 6
-    is CellState.Revealed7 -> 7
-    is CellState.Revealed8 -> 8
-    else -> null
-  }
