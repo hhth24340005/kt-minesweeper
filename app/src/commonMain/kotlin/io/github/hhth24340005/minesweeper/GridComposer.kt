@@ -22,6 +22,7 @@ import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import io.github.hhth24340005.minesweeper.logic.CellState
@@ -316,7 +317,9 @@ private fun Modifier.clickable(
     awaitPointerEventScope {
       while (true) {
         val event = awaitPointerEvent()
-        if (event.button?.let(eventFilter) == true) {
+        if (event.type == PointerEventType.Press &&
+          event.button?.let(eventFilter) == true
+        ) {
           onClick()
         }
       }
