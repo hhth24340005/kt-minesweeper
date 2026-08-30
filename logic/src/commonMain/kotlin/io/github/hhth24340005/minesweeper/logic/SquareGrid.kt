@@ -1,7 +1,26 @@
 package io.github.hhth24340005.minesweeper.logic
 
-public class SquareGrid<T>(rows: List<List<T>>) : Grid<T> {
-  override val rows: List<List<T>> = rows.map { it.toList() }
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
+
+public class SquareGrid<T>(
+  public override val rows: ImmutableList<ImmutableList<T>>,
+) : Grid<T> {
+  public constructor(
+    width: Int,
+    height: Int,
+    init: (x: Int, y: Int) -> T,
+  ) : this(
+    List(height) { y ->
+      List(width) { x ->
+        init(x, y)
+      }
+    },
+  )
+
+  public constructor(
+    rows: List<List<T>>,
+  ) : this(rows.map { it.toImmutableList() }.toImmutableList())
 
   override fun adjacentCellsOf(
     cell: T,

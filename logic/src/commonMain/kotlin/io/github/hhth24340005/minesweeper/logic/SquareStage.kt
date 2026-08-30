@@ -20,7 +20,8 @@ public class SquareStage private constructor(
       random: Random = Random,
     ): Uninitialized =
       Uninitialized(
-        rows = List(height) { List(width) { Uninitialized.Cell() } },
+        width = width,
+        height = height,
         mineDensity = mineDensity,
         random = random,
       )
@@ -102,11 +103,12 @@ public class SquareStage private constructor(
   }
 
   public class Uninitialized internal constructor(
-    rows: List<List<Uninitialized.Cell>>,
+    width: Int,
+    height: Int,
     private val mineDensity: Double,
     private val random: Random,
   ) : UninitializedStage<Uninitialized.Cell, CellState, Cell>,
-    Grid<Uninitialized.Cell> by SquareGrid(rows) {
+    Grid<Uninitialized.Cell> by SquareGrid(width, height, { _, _ -> Cell() }) {
     init {
       require(mineDensity in 0.0..1.0)
     }
