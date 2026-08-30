@@ -11,6 +11,25 @@ public class MinesweeperStage private constructor(
   private val grid: Grid<Cell>,
   private val mines: Set<Cell>,
 ) {
+  public companion object {
+    public fun prepare(
+      width: Int,
+      height: Int,
+      gridFactory: (
+        Int,
+        Int,
+        (Int, Int) -> Uninitialized.Cell,
+      ) -> Grid<Uninitialized.Cell>,
+      mineDensity: Double,
+      random: Random = Random,
+    ): Uninitialized =
+      Uninitialized(
+        gridFactory(width, height) { _, _ -> Uninitialized.Cell() },
+        mineDensity,
+        random,
+      )
+  }
+
   public val rows: List<List<Cell>> get() = grid.rows
 
   public fun reveal(
@@ -53,7 +72,8 @@ public class MinesweeperStage private constructor(
         visited += cell
         val adjacentMines = open(cell)
         if (adjacentMines == 0) {
-          grid.adjacentCellsOf(cell)
+          grid
+            .adjacentCellsOf(cell)
             .filter { it !in visited }
             .forEach {
               queue.addFirst(it)
