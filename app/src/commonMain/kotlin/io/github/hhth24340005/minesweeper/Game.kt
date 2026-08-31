@@ -7,11 +7,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,18 +27,23 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
-import kotlin.time.Clock
+import kotlin.time.ComparableTimeMark
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 import kotlin.use
 
 @Composable
 public fun Game(
   gridComposer: GridComposer,
   uninitializedStage: MinesweeperStage.Uninitialized,
-  clock: Clock = Clock.System,
+  time: TimeSource.WithComparableMarks = TimeSource.Monotonic,
 ): Deferred<GameResult> {
   val deferred =
     remember(uninitializedStage) {
@@ -166,48 +171,28 @@ public fun Game(
               modifier = Modifier.fillMaxSize(),
               contentAlignment = Alignment.TopEnd,
             ) {
-              val startInstant = remember { clock.now() }
-              var elapsed by remember { mutableLongStateOf(0) }
-              val elapsedText =
-                remember(elapsed) {
-                  val hours = (elapsed / 3600)
-                  val minutes = ((elapsed % 3600) / 60)
-                  val seconds = (elapsed % 60)
-
-                  val minutesText = "%02d".format(minutes)
-                  val secondsText = "%02d".format(seconds)
-
-                  if (0 < hours) {
-                    val hoursText = "%02d".format(hours)
-                    "${hoursText}h ${minutesText}m ${secondsText}s"
-                  } else {
-                    "${minutesText}m ${secondsText}s"
-                  }
-                }
-
-              LaunchedEffect(stage.status) {
-                if (stage.status != Status.Playing) {
-                  return@LaunchedEffect
-                }
-                while (true) {
-                  withFrameMillis {}
-                  elapsed = (clock.now() - startInstant).inWholeSeconds
-                }
-              }
-              val color =
-                when (stage.status) {
-                  Status.Playing -> Color.LightGray
-                  Status.Win -> Color.Yellow
-                  Status.Lose -> Color.Red
-                }
-
+              val stopwatch = remember { Stopwatch(time) }
+              val elapsed by stopwatch.elapsed(1.seconds)
+              var color by remember { mutableStateOf(Color.LightGray) }
               Text(
-                text = elapsedText,
+                text = formatDuration(elapsed),
                 color = color,
                 fontFamily = FontFamily.Monospace,
                 fontSize = 1.5.em,
                 modifier = Modifier.padding(5.dp),
               )
+
+              LaunchedEffect(stopwatch, stage.status) {
+                if (stage.status == Status.Playing) {
+                  stopwatch.resume()
+                }
+                color =
+                  when (stage.status) {
+                    Status.Playing -> Color.LightGray
+                    Status.Lose -> Color.Red
+                    Status.Win -> Color.Yellow
+                  }
+              }
             }
             if (stage.status == Status.Playing) {
               Box(
@@ -243,3 +228,58 @@ public sealed interface GameResult {
 
   public data object Canceled : GameResult
 }
+
+private class Stopwatch(
+  private val time: TimeSource.WithComparableMarks = TimeSource.Monotonic,
+) {
+  private var origin: ComparableTimeMark = time.markNow()
+  private var pausedAt: ComparableTimeMark? = null
+
+  private val pausedDuration: Duration get() =
+    pausedAt?.let { time.markNow() - it } ?: Duration.ZERO
+
+  @Composable
+  fun elapsed(
+    updateEvery: Duration = 1.seconds,
+  ): State<Duration> {
+    val elapsed = remember { mutableStateOf(Duration.ZERO) }
+    LaunchedEffect(updateEvery) {
+      val start = time.markNow()
+      var i = 1
+      while (true) {
+        elapsed.value = (pausedAt ?: time.markNow()) - origin
+        delay(start + (updateEvery * i++) - time.markNow())
+      }
+    }
+    return elapsed
+  }
+
+  suspend fun whileRunning(
+    suspension: suspend () -> Unit,
+  ) {
+    try {
+      origin += pausedDuration
+      pausedAt = null
+      suspension()
+    } finally {
+      pausedAt = time.markNow()
+    }
+  }
+
+  suspend fun resume() =
+    whileRunning { awaitCancellation() }
+}
+
+private fun formatDuration(
+  duration: Duration,
+): String =
+  duration.toComponents { hours, minutes, seconds, _ ->
+    val hoursStr = hours.toString().padStart(2, '0')
+    val minutesStr = minutes.toString().padStart(2, '0')
+    val secondsStr = seconds.toString().padStart(2, '0')
+    if (0 < hours) {
+      "${hoursStr}h ${minutesStr}m ${secondsStr}s"
+    } else {
+      "${minutesStr}m ${secondsStr}s"
+    }
+  }
