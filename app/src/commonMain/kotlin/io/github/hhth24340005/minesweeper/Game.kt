@@ -65,6 +65,9 @@ public fun Game(
           ) {
             val clicks =
               gridComposer.Grid(stage.rows) { cell ->
+                if (stage.status != MinesweeperStage.Status.Playing) {
+                  return@Grid CellHighlight.None
+                }
                 when (cell.status) {
                   is CellState.Concealed -> {
                     CellHighlight.Concealed
