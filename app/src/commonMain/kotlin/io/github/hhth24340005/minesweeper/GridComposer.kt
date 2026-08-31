@@ -158,10 +158,10 @@ private class HexGridComposer : GridComposer {
       ) {
         GridCol {
           rows.forEach { row ->
-            key(row) {
+            key(row.map { (_, id) -> id }) {
               Row {
                 row.forEachIndexed { colIndex, (status, identity) ->
-                  key(status, identity) {
+                  key(identity) {
                     val flow = Cell(colIndex, status)
                     LaunchedEffect(flow) {
                       flow.collect { button ->
