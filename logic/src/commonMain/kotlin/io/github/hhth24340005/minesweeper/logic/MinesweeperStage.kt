@@ -100,7 +100,7 @@ public class MinesweeperStage private constructor(
           it.status == CellState.Marked
         }
       if (cell.status.indicatedAdjacentMines == adjacentMarked) {
-        adjacentCells.forEach {
+        concealedNeighborsOf(cell).forEach {
           greedyOpen(it)
         }
       }
@@ -124,6 +124,24 @@ public class MinesweeperStage private constructor(
 
       else -> {}
     }
+  }
+
+  public fun concealedNeighborsOf(
+    cell: Cell,
+  ): Set<Cell> =
+    grid.adjacentCellsOf(cell).filterTo(mutableSetOf()) {
+      it.status == CellState.Concealed
+    }
+
+  public fun isBulkRevealReady(
+    cell: Cell,
+  ): Boolean {
+    val mines = cell.status.indicatedAdjacentMines ?: return false
+    val adjacentMarked =
+      grid.adjacentCellsOf(cell).count {
+        it.status == CellState.Marked
+      }
+    return mines == adjacentMarked
   }
 
   public suspend fun awaitWin() {
