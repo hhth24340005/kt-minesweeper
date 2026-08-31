@@ -24,11 +24,10 @@ import io.github.hhth24340005.minesweeper.logic.CellState
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage.Status
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -37,7 +36,6 @@ import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
-import kotlin.use
 
 @Composable
 public fun Game(
@@ -79,9 +77,11 @@ public fun Game(
                     CellHighlight.Concealed
                   }
 
+
                   is CellState.Marked -> {
                     CellHighlight.Marked
                   }
+
 
                   is CellState.ConcealedMine,
                   is CellState.Revealed0,
@@ -91,18 +91,14 @@ public fun Game(
 
                   else -> {
                     when {
-                      stage
-                        .concealedNeighborsOf(
-                          cell,
-                        ).isEmpty() -> CellHighlight.None
+                      stage.concealedNeighborsOf(cell).isEmpty()
+                      -> CellHighlight.None
 
-                      stage.isBulkRevealReady(
-                        cell,
-                      ) -> CellHighlight.BulkRevealReady
+                      stage.isBulkRevealReady(cell)
+                      -> CellHighlight.BulkRevealReady
 
-                      stage.isBulkMarkReady(
-                        cell,
-                      ) -> CellHighlight.BulkMarkReady
+                      stage.isBulkMarkReady(cell)
+                      -> CellHighlight.BulkMarkReady
 
                       else -> CellHighlight.NotResolved
                     }
@@ -110,61 +106,62 @@ public fun Game(
                 }
               }
             LaunchedRenderer(clicks) {
-              val parentJob = Job(coroutineContext[Job])
-              val coroutine = CoroutineScope(coroutineContext + parentJob)
-              val clickJob =
-                coroutine.launch {
-                  while (true) {
-                    val (click, cell) = clicks.firstOrNull() ?: break
-                    when (click) {
-                      PointerButton.Primary -> {
-                        stage.reveal(cell)
-                      }
-
-                      PointerButton.Secondary -> {
-                        stage.toggleMark(cell)
-                      }
-                    }
-                  }
-                }
-              val winJob =
-                coroutine.launch {
-                  stage.awaitWin()
-                  clickJob.cancel()
-                  layerOf().use { layer1 ->
-                    layer1 { proceed ->
-                      Text(
-                        "You win!",
-                        modifier =
-                          Modifier.clickable { proceed(Unit) },
-                        fontSize = 4.em,
-                        textDecoration = TextDecoration.Underline,
-                      )
-                    }
-                  }
-                }
-              val loseJob =
-                coroutine.launch {
-                  stage.awaitLose()
-                  clickJob.cancel()
-                  layerOf().use { layer1 ->
-                    layer1 { proceed ->
-                      Text(
-                        "You lose!",
-                        modifier =
-                          Modifier.clickable { proceed(Unit) },
-                        fontSize = 4.em,
-                        textDecoration = TextDecoration.Underline,
-                      )
-                    }
-                  }
-                }
               val result =
-                select {
-                  winJob.onJoin { GameResult.Win }
-                  loseJob.onJoin { GameResult.Lose }
+                coroutineScope {
+                  val clickJob =
+                    launch {
+                      while (true) {
+                        val (click, cell) = clicks.firstOrNull() ?: break
+                        when (click) {
+                          PointerButton.Primary -> {
+                            stage.reveal(cell)
+                          }
+
+                          PointerButton.Secondary -> {
+                            stage.toggleMark(cell)
+                          }
+                        }
+                      }
+                    }
+                  val winJob =
+                    launch {
+                      stage.awaitWin()
+                      clickJob.cancel()
+                      layerOf().use { layer1 ->
+                        layer1 { proceed ->
+                          Text(
+                            "You win!",
+                            modifier =
+                              Modifier.clickable { proceed(Unit) },
+                            fontSize = 4.em,
+                            textDecoration = TextDecoration.Underline,
+                          )
+                        }
+                      }
+                    }
+                  val loseJob =
+                    launch {
+                      stage.awaitLose()
+                      clickJob.cancel()
+                      layerOf().use { layer1 ->
+                        layer1 { proceed ->
+                          Text(
+                            "You lose!",
+                            modifier =
+                              Modifier.clickable { proceed(Unit) },
+                            fontSize = 4.em,
+                            textDecoration = TextDecoration.Underline,
+                          )
+                        }
+                      }
+                    }
+                  select {
+                    winJob.onJoin { GameResult.Win }
+                    loseJob.onJoin { GameResult.Lose }
+                  }.also {
+                    coroutineContext.cancelChildren()
+                  }
                 }
-              parentJob.cancelAndJoin()
               completeGame(result)
             }
             Box(
