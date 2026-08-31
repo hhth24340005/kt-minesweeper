@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import io.github.hhth24340005.minesweeper.logic.CellState
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -62,7 +63,43 @@ public fun Game(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
           ) {
-            val clicks = gridComposer.Grid(stage.rows)
+            val clicks =
+              gridComposer.Grid(stage.rows) { cell ->
+                when (cell.status) {
+                  is CellState.Concealed -> {
+                    CellHighlight.Concealed
+                  }
+
+                  is CellState.Marked -> {
+                    CellHighlight.Marked
+                  }
+
+                  is CellState.ConcealedMine,
+                  is CellState.Revealed0,
+                  -> {
+                    CellHighlight.None
+                  }
+
+                  else -> {
+                    when {
+                      stage
+                        .concealedNeighborsOf(
+                          cell,
+                        ).isEmpty() -> CellHighlight.None
+
+                      stage.isBulkRevealReady(
+                        cell,
+                      ) -> CellHighlight.BulkRevealReady
+
+                      stage.isBulkMarkReady(
+                        cell,
+                      ) -> CellHighlight.BulkMarkReady
+
+                      else -> CellHighlight.NotResolved
+                    }
+                  }
+                }
+              }
             LaunchedRenderer(clicks) {
               val parentJob = Job(coroutineContext[Job])
               val coroutine = CoroutineScope(coroutineContext + parentJob)

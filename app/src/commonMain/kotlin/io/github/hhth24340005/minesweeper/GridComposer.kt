@@ -62,6 +62,15 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import org.jetbrains.compose.resources.vectorResource
 
+public enum class CellHighlight {
+  None,
+  Concealed,
+  Marked,
+  NotResolved,
+  BulkRevealReady,
+  BulkMarkReady,
+}
+
 public interface GridComposer {
   public companion object {
     public fun hexOf(): GridComposer =
@@ -76,6 +85,7 @@ public interface GridComposer {
   @Composable
   public fun Grid(
     rows: List<List<MinesweeperStage.Cell>>,
+    highlight: (MinesweeperStage.Cell) -> CellHighlight,
   ): Flow<Pair<PointerButton, MinesweeperStage.Cell>>
 }
 
@@ -89,6 +99,7 @@ private class HexGridComposer : GridComposer {
         rows.map { row ->
           row.map { CellState.Concealed to it }
         },
+        highlight = { CellHighlight.Concealed },
       )
     val deferred =
       remember(grid) {
@@ -111,11 +122,13 @@ private class HexGridComposer : GridComposer {
   @Composable
   override fun Grid(
     rows: List<List<MinesweeperStage.Cell>>,
+    highlight: (MinesweeperStage.Cell) -> CellHighlight,
   ): Flow<Pair<PointerButton, MinesweeperStage.Cell>> =
     Grid(
       rows.map { row ->
         row.map { it.status to it }
       },
+      highlight = { (_, cell) -> highlight(cell) },
     )
 
 
@@ -123,6 +136,7 @@ private class HexGridComposer : GridComposer {
   @JvmName("GridPrivate")
   private fun <T : Any> Grid(
     rows: List<List<Pair<CellState, T>>>,
+    highlight: (Pair<CellState, T>) -> CellHighlight = { CellHighlight.None },
   ): Flow<Pair<PointerButton, T>> {
     val ret =
       remember {
@@ -160,9 +174,10 @@ private class HexGridComposer : GridComposer {
           rows.forEach { row ->
             key(row.map { (_, id) -> id }) {
               Row {
-                row.forEachIndexed { colIndex, (status, identity) ->
+                row.forEachIndexed { colIndex, pair ->
+                  val (status, identity) = pair
                   key(identity) {
-                    val flow = Cell(colIndex, status)
+                    val flow = Cell(colIndex, status, highlight(pair))
                     LaunchedEffect(flow) {
                       flow.collect { button ->
                         ret.emit(button to identity)
@@ -204,6 +219,7 @@ private class HexGridComposer : GridComposer {
   private fun Cell(
     colIndex: Int,
     cellState: CellState,
+    highlight: CellHighlight,
   ): Flow<PointerButton> {
     val images = cellImages(cellState)
     val width = images.maxOf { it.defaultWidth }
@@ -220,26 +236,13 @@ private class HexGridComposer : GridComposer {
     val isHovered by interaction.collectIsHoveredAsState()
     val background =
       if (isHovered) {
-        when (cellState) {
-          is CellState.Concealed,
-          -> {
-            Color.Cyan.copy(alpha = 0.3f)
-          }
-
-          is CellState.Marked,
-          -> {
-            Color.Magenta.copy(alpha = 0.3f)
-          }
-
-          is CellState.ConcealedMine,
-          is CellState.Revealed0,
-          -> {
-            Color.Transparent
-          }
-
-          else -> {
-            Color.Yellow.copy(alpha = 0.3f)
-          }
+        when (highlight) {
+          CellHighlight.None -> Color.Transparent
+          CellHighlight.Concealed -> Color.Cyan.copy(alpha = 0.5f)
+          CellHighlight.Marked -> Color.Yellow.copy(alpha = 0.3f)
+          CellHighlight.NotResolved -> Color.Yellow.copy(alpha = 0.3f)
+          CellHighlight.BulkRevealReady -> Color.Magenta.copy(alpha = 0.5f)
+          CellHighlight.BulkMarkReady -> Color.Magenta.copy(alpha = 0.5f)
         }
       } else {
         Color.Transparent
