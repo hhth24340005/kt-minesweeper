@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import io.github.hhth24340005.minesweeper.logic.CellState
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
+import io.github.hhth24340005.minesweeper.logic.MinesweeperStage.Status
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -65,7 +66,7 @@ public fun Game(
           ) {
             val clicks =
               gridComposer.Grid(stage.rows) { cell ->
-                if (stage.status != MinesweeperStage.Status.Playing) {
+                if (stage.status != Status.Playing) {
                   return@Grid CellHighlight.None
                 }
                 when (cell.status) {
@@ -184,35 +185,48 @@ public fun Game(
                   }
                 }
 
-              LaunchedEffect(Unit) {
+              LaunchedEffect(stage.status) {
+                if (stage.status != Status.Playing) {
+                  return@LaunchedEffect
+                }
                 while (true) {
                   withFrameMillis {}
                   elapsed = (clock.now() - startInstant).inWholeSeconds
                 }
               }
+              val color =
+                when (stage.status) {
+                  Status.Playing -> Color.LightGray
+                  Status.Win -> Color.Yellow
+                  Status.Lose -> Color.Red
+                }
 
               Text(
                 text = elapsedText,
-                color = Color.LightGray,
+                color = color,
                 fontFamily = FontFamily.Monospace,
                 fontSize = 1.5.em,
                 modifier = Modifier.padding(5.dp),
               )
             }
-            Box(
-              modifier = Modifier.fillMaxSize(),
-              contentAlignment = Alignment.BottomEnd,
-            ) {
-              Text(
-                text =
-                  "${stage.cellCount -
-                    stage.revealedCount -
-                    stage.mineCount} can be opened",
-                color = Color.LightGray,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 1.5.em,
-                modifier = Modifier.padding(5.dp),
-              )
+            if (stage.status == Status.Playing) {
+              Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.BottomEnd,
+              ) {
+                Text(
+                  text =
+                    "${
+                      stage.cellCount -
+                        stage.revealedCount -
+                        stage.mineCount
+                    } can be opened",
+                  color = Color.LightGray,
+                  fontFamily = FontFamily.Monospace,
+                  fontSize = 1.5.em,
+                  modifier = Modifier.padding(5.dp),
+                )
+              }
             }
           }
         }
