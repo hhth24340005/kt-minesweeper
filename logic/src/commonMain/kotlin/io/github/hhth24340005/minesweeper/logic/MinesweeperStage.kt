@@ -113,6 +113,10 @@ public class MinesweeperStage private constructor(
   public fun toggleMark(
     cell: Cell,
   ) {
+    if (isBulkMarkReady(cell)) {
+      bulkMark(cell)
+      return
+    }
     when (cell.status) {
       is CellState.Concealed -> {
         cell.status = CellState.Marked
@@ -142,6 +146,25 @@ public class MinesweeperStage private constructor(
         it.status == CellState.Marked
       }
     return mines == adjacentMarked
+  }
+
+  public fun isBulkMarkReady(
+    cell: Cell,
+  ): Boolean {
+    val mines = cell.status.indicatedAdjacentMines ?: return false
+    val adjacent = grid.adjacentCellsOf(cell)
+    val concealed = adjacent.count { it.status == CellState.Concealed }
+    val marked = adjacent.count { it.status == CellState.Marked }
+    return concealed + marked == mines && 0 < concealed
+  }
+
+  private fun bulkMark(
+    cell: Cell,
+  ) {
+    concealedNeighborsOf(cell).forEach {
+      it.status = CellState.Marked
+      markedCount++
+    }
   }
 
   public suspend fun awaitWin() {
