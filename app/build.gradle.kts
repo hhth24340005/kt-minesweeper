@@ -24,6 +24,7 @@ kotlin {
     commonMain {
       dependencies {
         implementation(project(":logic"))
+        implementation(project(":lib"))
 
         implementation(libs.compose.runtime)
         implementation(libs.compose.foundation)

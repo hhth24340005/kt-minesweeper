@@ -15,14 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.UiComposable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -39,7 +36,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import io.github.hhth24340005.minesweeper.logic.CellState
-import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
 import io.github.hhth24340005.minesweeper.resources.Res
 import io.github.hhth24340005.minesweeper.resources.hex_concealed
 import io.github.hhth24340005.minesweeper.resources.hex_flag
@@ -53,14 +49,11 @@ import io.github.hhth24340005.minesweeper.resources.hex_number_6
 import io.github.hhth24340005.minesweeper.resources.hex_number_7
 import io.github.hhth24340005.minesweeper.resources.hex_number_8
 import io.github.hhth24340005.minesweeper.resources.hex_revealed
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.merge
 import org.jetbrains.compose.resources.vectorResource
@@ -105,127 +98,12 @@ public interface GridComposer {
   }
 
   @Composable
-  public fun UninitializedGrid(
-    rows: List<List<MinesweeperStage.Uninitialized.Cell>>,
-  ): Deferred<MinesweeperStage.Uninitialized.Cell>
-
-  @Composable
-  public fun Grid(
-    rows: List<List<MinesweeperStage.Cell>>,
-    highlight: (MinesweeperStage.Cell) -> CellHighlight,
-  ): Flow<Pair<PointerButton, MinesweeperStage.Cell>>
-
-  @Composable
   public fun <T : Any> Grid(
     rows: List<List<Cell<T>>>,
   ): Flow<CellClick<T>>
 }
 
 private class HexGridComposer : GridComposer {
-  @Composable
-  override fun UninitializedGrid(
-    rows: List<List<MinesweeperStage.Uninitialized.Cell>>,
-  ): Deferred<MinesweeperStage.Uninitialized.Cell> {
-    val grid =
-      Grid(
-        rows.map { row ->
-          row.map { CellState.Concealed to it }
-        },
-        highlight = { CellHighlight.Concealed },
-      )
-    val deferred =
-      remember(grid) {
-        CompletableDeferred<MinesweeperStage.Uninitialized.Cell>()
-      }
-    val race =
-      remember(grid) {
-        grid.mapNotNull { (click, cell) ->
-          cell.takeIf { click == PointerButton.Primary }
-        }
-      }
-
-    LaunchedEffect(deferred, race) {
-      deferred.complete(race.first())
-    }
-
-    return deferred
-  }
-
-  @Composable
-  override fun Grid(
-    rows: List<List<MinesweeperStage.Cell>>,
-    highlight: (MinesweeperStage.Cell) -> CellHighlight,
-  ): Flow<Pair<PointerButton, MinesweeperStage.Cell>> =
-    Grid(
-      rows.map { row ->
-        row.map { it.status to it }
-      },
-      highlight = { (_, cell) -> highlight(cell) },
-    )
-
-
-  @Composable
-  @JvmName("GridPrivate")
-  private fun <T : Any> Grid(
-    rows: List<List<Pair<CellState, T>>>,
-    highlight: (Pair<CellState, T>) -> CellHighlight = { CellHighlight.None },
-  ): Flow<Pair<PointerButton, T>> {
-    val ret =
-      remember {
-        MutableSharedFlow<Pair<PointerButton, T>>(
-          extraBufferCapacity = 1,
-          onBufferOverflow = BufferOverflow.DROP_OLDEST,
-        )
-      }
-    val paddingX =
-      maxOf(
-        vectorResource(Res.drawable.hex_revealed).defaultWidth / 4f,
-        vectorResource(Res.drawable.hex_concealed).defaultWidth / 4f,
-      )
-    val paddingY =
-      maxOf(
-        vectorResource(Res.drawable.hex_revealed).defaultHeight / 4f,
-        vectorResource(Res.drawable.hex_concealed).defaultHeight / 4f,
-      )
-    Box(
-      modifier =
-        Modifier
-          .fillMaxSize()
-          .background(Color.DarkGray),
-      contentAlignment = Alignment.Center,
-    ) {
-      Box(
-        modifier =
-          Modifier
-            .background(
-              Color(0xFFFFFFFF),
-              RoundedCornerShape(maxOf(paddingX, paddingY)),
-            ).padding(paddingX, paddingY),
-      ) {
-        GridCol {
-          rows.forEach { row ->
-            key(row.map { (_, id) -> id }) {
-              Row {
-                row.forEachIndexed { colIndex, pair ->
-                  val (status, identity) = pair
-                  key(identity) {
-                    val flow = Cell(colIndex, status, highlight(pair))
-                    LaunchedEffect(flow) {
-                      flow.collect { button ->
-                        ret.emit(button to identity)
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    return ret.asSharedFlow()
-  }
-
   @Composable
   override fun <T : Any> Grid(
     rows: List<List<Cell<T>>>,
@@ -262,27 +140,6 @@ private class HexGridComposer : GridComposer {
       ret = content()
     }
     return ret
-  }
-
-  @Composable
-  private fun GridCol(
-    content:
-      @Composable @UiComposable
-      () -> Unit,
-  ) {
-    Layout(content) { measurables, constraints ->
-      val placeable = measurables.map { it.measure(constraints) }
-      val cellH = placeable.maxOf { it.height }
-      val rowSpacing = cellH * 3 / 4
-      val totalH = rowSpacing * (placeable.size - 1) + cellH
-      val maxW = placeable.maxOf { it.width }
-
-      layout(maxW, totalH) {
-        placeable.forEachIndexed { i, p ->
-          p.place((maxW - p.width) / 2, i * rowSpacing)
-        }
-      }
-    }
   }
 
   @Composable
