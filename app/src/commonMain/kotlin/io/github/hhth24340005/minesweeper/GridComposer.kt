@@ -35,6 +35,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import io.github.hhth24340005.minesweeper.logic.CellState
@@ -58,9 +59,17 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.merge
 import org.jetbrains.compose.resources.vectorResource
+
+public data class Cell<T : Any>(
+  public val identity: T,
+  public val status: CellState = CellState.Concealed,
+  public val highlight: CellHighlight = CellHighlight.Concealed,
+)
 
 public enum class CellHighlight {
   None,
@@ -69,6 +78,24 @@ public enum class CellHighlight {
   NotResolved,
   BulkRevealReady,
   BulkMarkReady,
+}
+
+public sealed interface CellClick<out T : Any> {
+  public companion object {
+    public fun <T : Any> Flow<CellClick<T>>.filterIsLeft(): Flow<Left<T>> =
+      filterIsInstance<Left<T>>()
+
+    public fun <T : Any> Flow<CellClick<T>>.filterIsRight(): Flow<Right<T>> =
+      filterIsInstance<Right<T>>()
+  }
+
+  public val cellIdentity: T
+
+  public data class Left<out T : Any>(override val cellIdentity: T) :
+    CellClick<T>
+
+  public data class Right<out T : Any>(override val cellIdentity: T) :
+    CellClick<T>
 }
 
 public interface GridComposer {
@@ -87,6 +114,11 @@ public interface GridComposer {
     rows: List<List<MinesweeperStage.Cell>>,
     highlight: (MinesweeperStage.Cell) -> CellHighlight,
   ): Flow<Pair<PointerButton, MinesweeperStage.Cell>>
+
+  @Composable
+  public fun <T : Any> Grid(
+    rows: List<List<Cell<T>>>,
+  ): Flow<CellClick<T>>
 }
 
 private class HexGridComposer : GridComposer {
@@ -195,6 +227,44 @@ private class HexGridComposer : GridComposer {
   }
 
   @Composable
+  override fun <T : Any> Grid(
+    rows: List<List<Cell<T>>>,
+  ): Flow<CellClick<T>> =
+    GridBox {
+      GridCol(rows, { it.identity }) { row ->
+        GridRow(row)
+      }.merge()
+    }
+
+  @Composable
+  private inline fun <R : Any> GridBox(
+    paddingX: Dp =
+      maxOf(
+        vectorResource(Res.drawable.hex_revealed).defaultWidth / 4f,
+        vectorResource(Res.drawable.hex_concealed).defaultWidth / 4f,
+      ),
+    paddingY: Dp =
+      maxOf(
+        vectorResource(Res.drawable.hex_revealed).defaultHeight / 4f,
+        vectorResource(Res.drawable.hex_concealed).defaultHeight / 4f,
+      ),
+    color: Color = Color.White,
+    shape: Shape = RoundedCornerShape(maxOf(paddingX, paddingY)),
+    content: @Composable () -> R,
+  ): R {
+    lateinit var ret: R
+    Box(
+      modifier =
+        Modifier
+          .background(color, shape)
+          .padding(paddingX, paddingY),
+    ) {
+      ret = content()
+    }
+    return ret
+  }
+
+  @Composable
   private fun GridCol(
     content:
       @Composable @UiComposable
@@ -214,6 +284,63 @@ private class HexGridComposer : GridComposer {
       }
     }
   }
+
+  @Composable
+  private inline fun <T, R> GridCol(
+    rows: List<List<T>>,
+    rowKeyOf: (T) -> Any? = { it },
+    rowContent: @Composable (List<T>) -> R,
+  ): List<R> {
+    lateinit var ret: List<R>
+    Layout(
+      {
+        ret =
+          rows.map { row ->
+            key(row.map { rowKeyOf(it) }) {
+              rowContent(row)
+            }
+          }
+      },
+    ) { measurables, constraints ->
+      val placeable = measurables.map { it.measure(constraints) }
+      val cellH = placeable.maxOf { it.height }
+      val rowSpacing = cellH * 3 / 4
+      val totalH = rowSpacing * (placeable.size - 1) + cellH
+      val maxW = placeable.maxOf { it.width }
+
+      layout(maxW, totalH) {
+        placeable.forEachIndexed { i, p ->
+          p.place((maxW - p.width) / 2, i * rowSpacing)
+        }
+      }
+    }
+    return ret
+  }
+
+  @Composable
+  private fun <T : Any> GridRow(
+    row: List<Cell<T>>,
+  ): Flow<CellClick<T>> {
+    lateinit var ret: Flow<CellClick<T>>
+    Row {
+      ret =
+        row
+          .mapIndexed { colIndex, (identity, status, highlight) ->
+            key(identity) {
+              Cell(colIndex, status, highlight)
+                .mapNotNull { button ->
+                  when (button) {
+                    PointerButton.Primary -> CellClick.Left(identity)
+                    PointerButton.Secondary -> CellClick.Right(identity)
+                    else -> null
+                  }
+                }
+            }
+          }.merge()
+    }
+    return ret
+  }
+
 
   @Composable
   private fun Cell(
