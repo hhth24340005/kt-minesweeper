@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import io.github.hhth24340005.minesweeper.CellClick.Companion.filterIsLeft
@@ -215,13 +216,22 @@ private suspend fun awaitPause() =
         Color.White
       }
     Box(
-      Modifier
-        .clickable { complete?.invoke(Unit) }
-        .background(background)
-        .clip(RoundedCornerShape(5.dp))
-        .hoverable(interaction),
+      modifier = Modifier.padding(10.dp),
+      contentAlignment = Alignment.BottomStart,
     ) {
-      Text(text = "Pause")
+      Box(
+        Modifier
+          .clickable { complete?.invoke(Unit) }
+          .background(background)
+          .clip(RoundedCornerShape(5.dp))
+          .hoverable(interaction),
+      ) {
+        Text(
+          text = "Pause",
+          fontWeight = FontWeight.Bold,
+          fontSize = 1.em,
+        )
+      }
     }
   }
 
