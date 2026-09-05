@@ -1,8 +1,6 @@
 package io.github.hhth24340005.minesweeper
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
 import io.github.hhth24340005.minesweeper.logic.hexGridOf
@@ -12,7 +10,7 @@ import kotlinx.coroutines.Job
 @Preview
 public fun App(): Job =
   LaunchedRenderer(Unit) {
-    val gridComposer = GridComposer.hexOf()
+    val gridComposer = GridRenderer.hexOf()
 
     while (true) {
       when (render { Title() }) {
@@ -21,7 +19,7 @@ public fun App(): Job =
 
           render {
             Game(
-              gridComposer = gridComposer,
+              gridRenderer = gridComposer,
               uninitializedStage = stage,
             )
           }

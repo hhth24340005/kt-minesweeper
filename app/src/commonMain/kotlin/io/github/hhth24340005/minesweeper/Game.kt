@@ -48,7 +48,7 @@ import kotlin.time.Duration
 
 @Composable
 public fun Game(
-  gridComposer: GridComposer,
+  gridRenderer: GridRenderer,
   uninitializedStage: MinesweeperStage.Uninitialized,
 ): Deferred<GameResult> =
   LaunchedRenderer(uninitializedStage) {
@@ -56,7 +56,7 @@ public fun Game(
     val stage =
       renderAndGetFirst {
         val clicks =
-          gridComposer
+          gridRenderer
             .Grid(
               uninitializedStage.rows.map { it.map(::Cell) },
             ).filterIsLeft()
@@ -84,7 +84,7 @@ public fun Game(
       }.getOrElse { return@LaunchedRenderer it }
     render {
       val clicks =
-        gridComposer.Grid(
+        gridRenderer.Grid(
           stage.rows.map {
             it.map { cell ->
               Cell(cell, cell.status, cellHighlightOf(cell, stage))

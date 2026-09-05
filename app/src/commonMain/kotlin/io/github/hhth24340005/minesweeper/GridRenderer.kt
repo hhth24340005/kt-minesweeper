@@ -92,10 +92,10 @@ public sealed interface CellClick<out T : Any> {
     CellClick<T>
 }
 
-public interface GridComposer {
+public interface GridRenderer {
   public companion object {
-    public fun hexOf(): GridComposer =
-      HexGridComposer()
+    public fun hexOf(): GridRenderer =
+      HexGridRenderer()
   }
 
   @Composable
@@ -104,7 +104,7 @@ public interface GridComposer {
   ): Flow<CellClick<T>>
 }
 
-private class HexGridComposer : GridComposer {
+private class HexGridRenderer : GridRenderer {
   @Composable
   override fun <T : Any> Grid(
     rows: List<List<Cell<T>>>,
