@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
@@ -216,10 +217,11 @@ private class HexGridComposer : GridComposer {
           onBufferOverflow = BufferOverflow.DROP_OLDEST,
         )
       }
+    val subscription by flow.subscriptionCount.collectAsState()
     val interaction = remember { MutableInteractionSource() }
     val isHovered by interaction.collectIsHoveredAsState()
     val background =
-      if (isHovered) {
+      if (0 < subscription && isHovered) {
         when (highlight) {
           CellHighlight.None -> Color.Transparent
           CellHighlight.Concealed -> Color.Cyan.copy(alpha = 0.5f)
