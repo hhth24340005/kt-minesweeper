@@ -16,9 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,16 +42,12 @@ import io.github.hhth24340005.minesweeper.logic.MinesweeperStage.Status
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlin.let
-import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
 @Composable
@@ -112,50 +106,6 @@ public sealed interface GameResult {
   public data object Lose : GameResult
 
   public data object Canceled : GameResult
-}
-
-private class Stopwatch(
-  private val time: TimeSource.WithComparableMarks = TimeSource.Monotonic,
-) {
-  private var origin: ComparableTimeMark = time.markNow()
-  private var pausedAt: ComparableTimeMark? = origin
-
-  private val pausedDuration: Duration get() =
-    pausedAt?.let { time.markNow() - it } ?: Duration.ZERO
-
-  @Composable
-  fun rememberElapsed(
-    updateEvery: Duration = 1.seconds,
-  ): State<Duration> {
-    val elapsed =
-      remember {
-        mutableStateOf((pausedAt ?: time.markNow()) - origin)
-      }
-    LaunchedEffect(updateEvery) {
-      val start = time.markNow()
-      var i = 1
-      while (true) {
-        elapsed.value = (pausedAt ?: time.markNow()) - origin
-        delay(start + (updateEvery * i++) - time.markNow())
-      }
-    }
-    return elapsed
-  }
-
-  suspend fun <T> whileRunning(
-    suspension: suspend () -> T,
-  ): T {
-    try {
-      origin += pausedDuration
-      pausedAt = null
-      return suspension()
-    } finally {
-      pausedAt = time.markNow()
-    }
-  }
-
-  suspend fun resume(): Nothing =
-    whileRunning { awaitCancellation() }
 }
 
 private fun cellHighlightOf(
