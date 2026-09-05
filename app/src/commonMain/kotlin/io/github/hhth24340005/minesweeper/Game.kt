@@ -3,9 +3,6 @@ package io.github.hhth24340005.minesweeper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.hoverable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -202,15 +199,7 @@ private suspend fun awaitPause() =
   renderer.renderCompletable(
     alignment = Alignment.TopEnd,
   ) { complete ->
-    val interaction = remember { MutableInteractionSource() }
     val focusRequester = remember { FocusRequester() }
-    val isHovered by interaction.collectIsHoveredAsState()
-    val background =
-      if (complete != null && isHovered) {
-        Color.LightGray
-      } else {
-        Color.White
-      }
     LaunchedEffect(Unit) {
       focusRequester.requestFocus()
     }
@@ -231,11 +220,7 @@ private suspend fun awaitPause() =
       contentAlignment = Alignment.BottomStart,
     ) {
       Box(
-        Modifier
-          .clickable { complete?.invoke(Unit) }
-          .background(background)
-          .clip(RoundedCornerShape(5.dp))
-          .hoverable(interaction),
+        Modifier.clickable { complete?.invoke(Unit) },
       ) {
         Text(
           text = "Pause",
@@ -255,65 +240,62 @@ private suspend fun awaitPauseDismissal(
       Modifier
         .fillMaxSize()
         .background(Color.Black.copy(alpha = 0.5f)),
+    alignment = Alignment.Center,
   ) { complete ->
     val elapsed by stopwatch.rememberElapsed()
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
       focusRequester.requestFocus()
     }
-    Box(
-      contentAlignment = Alignment.Center,
+    Column(
+      Modifier
+        .onKeyEvent { e ->
+          if (e.type == KeyEventType.KeyDown && e.key == Key.Escape) {
+            return@onKeyEvent complete
+              ?.invoke(Unit)
+              ?.let { true }
+              ?: false
+          }
+          false
+        }.focusable()
+        .focusRequester(focusRequester),
+      horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-      Column(
-        Modifier
-          .onKeyEvent { e ->
-            if (e.type == KeyEventType.KeyDown && e.key == Key.Escape) {
-              return@onKeyEvent complete
-                ?.invoke(Unit)
-                ?.let { true }
-                ?: false
+      Text(
+        modifier =
+          Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { complete?.invoke(Unit) }
+            .padding(vertical = 5.dp, horizontal = 20.dp),
+        text = "Resume",
+        fontSize = 2.em,
+        color = Color.White,
+      )
+      Spacer(
+        Modifier.size(width = 0.dp, height = 10.dp),
+      )
+      Text(
+        text = "Quit",
+        modifier =
+          Modifier.clickable {
+            if (complete != null) {
+              cancelGame()
+              complete(Unit)
             }
-            false
-          }.focusable()
-          .focusRequester(focusRequester),
-        horizontalAlignment = Alignment.CenterHorizontally,
-      ) {
-        Text(
-          modifier =
-            Modifier
-              .clip(RoundedCornerShape(10.dp))
-              .clickable { complete?.invoke(Unit) }
-              .padding(vertical = 5.dp, horizontal = 20.dp),
-          text = "Resume",
-          fontSize = 2.em,
-          color = Color.White,
-        )
-        Spacer(
-          Modifier.size(width = 0.dp, height = 10.dp),
-        )
-        Text(
-          text = "Quit",
-          modifier =
-            Modifier.clickable {
-              if (complete != null) {
-                cancelGame()
-                complete(Unit)
-              }
-            },
-          color = Color.White,
-          fontSize = 2.em,
-        )
-      }
-      Box(
-        Modifier.fillMaxSize(),
-        contentAlignment = Alignment.BottomCenter,
-      ) {
-        Text(
-          text = formatDuration(elapsed),
-          color = Color.White,
-          fontSize = 1.5.em,
-        )
-      }
+          },
+        color = Color.White,
+        fontSize = 2.em,
+      )
+    }
+    Box(
+      Modifier.fillMaxSize(),
+      contentAlignment = Alignment.BottomCenter,
+    ) {
+      Text(
+        text = formatDuration(elapsed),
+        color = Color.White,
+        fontSize = 1.5.em,
+      )
     }
   }
 }
