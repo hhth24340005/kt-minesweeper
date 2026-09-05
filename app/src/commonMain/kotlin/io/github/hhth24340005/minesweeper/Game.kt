@@ -2,13 +2,16 @@ package io.github.hhth24340005.minesweeper
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,7 +23,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -33,6 +43,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlin.let
 import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -184,7 +195,7 @@ private suspend fun MinesweeperStage.runService(
       whileActive { resumeInput(clicks) }
       whileActive { stopwatch.resume() }
       launch { awaitPause() }
-        .onJoin { awaitPauseDismissal(stopwatch) }
+        .onJoin { awaitPauseDismissal(stopwatch = stopwatch) }
     }
   }
 }
@@ -208,6 +219,7 @@ private suspend fun awaitPause() =
     alignment = Alignment.TopEnd,
   ) { complete ->
     val interaction = remember { MutableInteractionSource() }
+    val focusRequester = remember { FocusRequester() }
     val isHovered by interaction.collectIsHoveredAsState()
     val background =
       if (complete != null && isHovered) {
@@ -215,8 +227,23 @@ private suspend fun awaitPause() =
       } else {
         Color.White
       }
+    LaunchedEffect(Unit) {
+      focusRequester.requestFocus()
+    }
     Box(
-      modifier = Modifier.padding(10.dp),
+      modifier =
+        Modifier
+          .padding(10.dp)
+          .onKeyEvent { e ->
+            if (e.type == KeyEventType.KeyDown && e.key == Key.Escape) {
+              return@onKeyEvent complete
+                ?.invoke(Unit)
+                ?.let { true }
+                ?: false
+            }
+            false
+          }.focusable()
+          .focusRequester(focusRequester),
       contentAlignment = Alignment.BottomStart,
     ) {
       Box(
@@ -235,37 +262,52 @@ private suspend fun awaitPause() =
     }
   }
 
-context(renderer: RendererScope)
-private suspend fun awaitPauseDismissal(
-  stopwatch: Stopwatch,
-) {
-  race {
-    launch {
-      renderer.renderCompletable(
+context(renderer: RendererScope, stopwatch: Stopwatch)
+private suspend fun awaitPauseDismissal() {
+  renderer.renderCompletable(
+    modifier =
+      Modifier
+        .fillMaxSize()
+        .background(Color.Black.copy(alpha = 0.5f)),
+  ) { complete ->
+    val elapsed by stopwatch.rememberElapsed()
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+      focusRequester.requestFocus()
+    }
+    Column(
+      Modifier
+        .onKeyEvent { e ->
+          if (e.type == KeyEventType.KeyDown && e.key == Key.Escape) {
+            return@onKeyEvent complete
+              ?.invoke(Unit)
+              ?.let { true }
+              ?: false
+          }
+          false
+        }.focusable()
+        .focusRequester(focusRequester),
+      horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+      Text(
         modifier =
           Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f)),
-      ) { complete ->
-        val elapsed by stopwatch.rememberElapsed()
-        Column {
-          Text(
-            text = "Resume",
-            Modifier
-              .padding(10.dp)
-              .clip(RoundedCornerShape(10.dp))
-              .background(Color.White)
-              .clickable { complete?.invoke(Unit) },
-            fontSize = 4.em,
-          )
-          Text(
-            text = formatDuration(elapsed),
-            color = Color.White,
-            fontSize = 4.em,
-          )
-        }
-      }
-    }.onJoin {}
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { complete?.invoke(Unit) }
+            .padding(vertical = 5.dp, horizontal = 20.dp),
+        text = "Resume",
+        fontSize = 2.em,
+        color = Color.White,
+      )
+      Spacer(
+        Modifier.size(width = 0.dp, height = 10.dp),
+      )
+      Text(
+        text = formatDuration(elapsed),
+        color = Color.White,
+        fontSize = 2.em,
+      )
+    }
   }
 }
 
