@@ -45,13 +45,11 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlin.let
 import kotlin.time.Duration
-import kotlin.time.TimeSource
 
 @Composable
 public fun Game(
   gridComposer: GridComposer,
   uninitializedStage: MinesweeperStage.Uninitialized,
-  time: TimeSource.WithComparableMarks = TimeSource.Monotonic,
 ): Deferred<GameResult> =
   LaunchedRenderer(uninitializedStage) {
     val stopwatch = Stopwatch()
