@@ -1,6 +1,7 @@
 package io.github.hhth24340005.minesweeper
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -46,6 +47,20 @@ public interface RaceBuilder<R> : CoroutineScope {
       try {
         join()
         onWin
+      } catch (e: CancellationException) {
+        cancel(e)
+        throw e
+      }
+    }
+  }
+
+  public fun <T> Deferred<T>.onAwait(
+    onWin: suspend (T) -> R,
+  ) {
+    racer {
+      try {
+        val result = await();
+        { onWin(result) }
       } catch (e: CancellationException) {
         cancel(e)
         throw e

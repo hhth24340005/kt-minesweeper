@@ -39,9 +39,12 @@ import io.github.hhth24340005.minesweeper.logic.CellState
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage.Status
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlin.let
 import kotlin.time.ComparableTimeMark
@@ -56,16 +59,28 @@ public fun Game(
   time: TimeSource.WithComparableMarks = TimeSource.Monotonic,
 ): Deferred<GameResult> =
   LaunchedRenderer(uninitializedStage) {
+    val stopwatch = Stopwatch()
     val stage =
-      run {
-        val (identity) =
-          renderAndGetFirst {
-            gridComposer
-              .Grid(
-                uninitializedStage.rows.map { it.map(::Cell) },
-              ).filterIsLeft()
+      renderAndGetFirst {
+        val clicks =
+          gridComposer
+            .Grid(
+              uninitializedStage.rows.map { it.map(::Cell) },
+            ).filterIsLeft()
+        flow {
+          while (true) {
+            race {
+              async { clicks.first() }
+                .onAwait { (identity) ->
+                  emit(uninitializedStage.initialize(identity))
+                }
+              launch { awaitPause() }
+                .onJoin {
+                  awaitPauseDismissal(stopwatch = stopwatch)
+                }
+            }
           }
-        uninitializedStage.initialize(identity)
+        }
       }
     render {
       val clicks =
@@ -76,7 +91,7 @@ public fun Game(
             }
           },
         )
-      stage.play(clicks)
+      stage.play(clicks, stopwatch = stopwatch)
     }
   }
 
@@ -92,7 +107,7 @@ private class Stopwatch(
   private val time: TimeSource.WithComparableMarks = TimeSource.Monotonic,
 ) {
   private var origin: ComparableTimeMark = time.markNow()
-  private var pausedAt: ComparableTimeMark? = null
+  private var pausedAt: ComparableTimeMark? = origin
 
   private val pausedDuration: Duration get() =
     pausedAt?.let { time.markNow() - it } ?: Duration.ZERO
@@ -174,6 +189,7 @@ private fun cellHighlightOf(
 }
 
 @Composable
+context(stopwatch: Stopwatch)
 private fun MinesweeperStage.play(
   clicks: Flow<CellClick<MinesweeperStage.Cell>>,
 ): Deferred<GameResult> =
@@ -185,17 +201,16 @@ private fun MinesweeperStage.play(
     }
   }
 
-context(renderer: RendererScope)
+context(renderer: RendererScope, stopwatch: Stopwatch)
 private suspend fun MinesweeperStage.runService(
   clicks: Flow<CellClick<MinesweeperStage.Cell>>,
 ): Nothing {
-  val stopwatch = Stopwatch()
   while (true) {
     race {
       whileActive { resumeInput(clicks) }
       whileActive { stopwatch.resume() }
       launch { awaitPause() }
-        .onJoin { awaitPauseDismissal(stopwatch = stopwatch) }
+        .onJoin { awaitPauseDismissal() }
     }
   }
 }
