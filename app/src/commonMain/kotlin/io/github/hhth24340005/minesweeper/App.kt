@@ -1,31 +1,40 @@
 package io.github.hhth24340005.minesweeper
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
 import io.github.hhth24340005.minesweeper.logic.hexGridOf
+import kotlinx.coroutines.Job
 
 @Composable
 @Preview
-public fun App() {
-  var stage by remember { mutableStateOf(stageOf()) }
-  val gridComposer = remember { GridComposer.hexOf() }
+public fun App(): Job =
+  LaunchedRenderer(Unit) {
+    val gridComposer = GridComposer.hexOf()
 
-  val deferred =
-    Game(
-      gridComposer = gridComposer,
-      uninitializedStage = stage,
-    )
-  LaunchedEffect(deferred) {
-    deferred.await()
-    stage = stageOf()
+    while (true) {
+      when (render { Title() }) {
+        is TitleResult.Start -> {
+          val stage = stageOf()
+
+          render {
+            Game(
+              gridComposer = gridComposer,
+              uninitializedStage = stage,
+            )
+          }
+        }
+
+        is TitleResult.Leaderboard -> {}
+
+        is TitleResult.Quit -> {
+          break
+        }
+      }
+    }
   }
-}
 
 private fun stageOf(): MinesweeperStage.Uninitialized =
   MinesweeperStage.prepare(
