@@ -60,24 +60,26 @@ public fun Game(
             .Grid(
               uninitializedStage.rows.map { it.map(::Cell) },
             ).filterIsLeft()
-        flow {
-          val gameCancellation = Job()
-          while (true) {
-            race {
-              async { clicks.first() }
-                .onAwait { (identity) ->
-                  emit(uninitializedStage.initialize(identity).right())
+        remember(clicks) {
+          flow {
+            val gameCancellation = Job()
+            while (true) {
+              race {
+                async { clicks.first() }
+                  .onAwait { (identity) ->
+                    emit(uninitializedStage.initialize(identity).right())
+                  }
+                gameCancellation.onJoin {
+                  emit(GameResult.Canceled.left())
                 }
-              gameCancellation.onJoin {
-                emit(GameResult.Canceled.left())
+                launch { awaitPause() }
+                  .onJoin {
+                    awaitPauseDismissal(
+                      stopwatch = stopwatch,
+                      cancelGame = { gameCancellation.complete() },
+                    )
+                  }
               }
-              launch { awaitPause() }
-                .onJoin {
-                  awaitPauseDismissal(
-                    stopwatch = stopwatch,
-                    cancelGame = { gameCancellation.complete() },
-                  )
-                }
             }
           }
         }
