@@ -34,11 +34,15 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import arrow.core.getOrElse
+import arrow.core.left
+import arrow.core.right
 import io.github.hhth24340005.minesweeper.CellClick.Companion.filterIsLeft
 import io.github.hhth24340005.minesweeper.logic.CellState
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage.Status
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
@@ -68,20 +72,27 @@ public fun Game(
               uninitializedStage.rows.map { it.map(::Cell) },
             ).filterIsLeft()
         flow {
+          val gameCancellation = Job()
           while (true) {
             race {
               async { clicks.first() }
                 .onAwait { (identity) ->
-                  emit(uninitializedStage.initialize(identity))
+                  emit(uninitializedStage.initialize(identity).right())
                 }
+              gameCancellation.onJoin {
+                emit(GameResult.Canceled.left())
+              }
               launch { awaitPause() }
                 .onJoin {
-                  awaitPauseDismissal(stopwatch = stopwatch)
+                  awaitPauseDismissal(
+                    stopwatch = stopwatch,
+                    cancelGame = { gameCancellation.complete() },
+                  )
                 }
             }
           }
         }
-      }
+      }.getOrElse { return@LaunchedRenderer it }
     render {
       val clicks =
         gridComposer.Grid(
@@ -194,8 +205,15 @@ private fun MinesweeperStage.play(
   clicks: Flow<CellClick<MinesweeperStage.Cell>>,
 ): Deferred<GameResult> =
   LaunchedRenderer(Unit) {
+    val gameCancellation = Job()
     race {
-      whileActive { runService(clicks) }
+      whileActive {
+        runService(
+          clicks,
+          cancelGame = { gameCancellation.complete() },
+        )
+      }
+      gameCancellation.onJoin { GameResult.Canceled }
       launch { awaitWin() }.onJoin { showWinOverlay() }
       launch { awaitLose() }.onJoin { showLoseOverlay() }
     }
@@ -204,13 +222,14 @@ private fun MinesweeperStage.play(
 context(renderer: RendererScope, stopwatch: Stopwatch)
 private suspend fun MinesweeperStage.runService(
   clicks: Flow<CellClick<MinesweeperStage.Cell>>,
+  cancelGame: () -> Unit,
 ): Nothing {
   while (true) {
     race {
       whileActive { resumeInput(clicks) }
       whileActive { stopwatch.resume() }
       launch { awaitPause() }
-        .onJoin { awaitPauseDismissal() }
+        .onJoin { awaitPauseDismissal(cancelGame) }
     }
   }
 }
@@ -278,7 +297,9 @@ private suspend fun awaitPause() =
   }
 
 context(renderer: RendererScope, stopwatch: Stopwatch)
-private suspend fun awaitPauseDismissal() {
+private suspend fun awaitPauseDismissal(
+  cancelGame: () -> Unit,
+) {
   renderer.renderCompletable(
     modifier =
       Modifier
@@ -290,38 +311,59 @@ private suspend fun awaitPauseDismissal() {
     LaunchedEffect(Unit) {
       focusRequester.requestFocus()
     }
-    Column(
-      Modifier
-        .onKeyEvent { e ->
-          if (e.type == KeyEventType.KeyDown && e.key == Key.Escape) {
-            return@onKeyEvent complete
-              ?.invoke(Unit)
-              ?.let { true }
-              ?: false
-          }
-          false
-        }.focusable()
-        .focusRequester(focusRequester),
-      horizontalAlignment = Alignment.CenterHorizontally,
+    Box(
+      contentAlignment = Alignment.Center,
     ) {
-      Text(
-        modifier =
-          Modifier
-            .clip(RoundedCornerShape(10.dp))
-            .clickable { complete?.invoke(Unit) }
-            .padding(vertical = 5.dp, horizontal = 20.dp),
-        text = "Resume",
-        fontSize = 2.em,
-        color = Color.White,
-      )
-      Spacer(
-        Modifier.size(width = 0.dp, height = 10.dp),
-      )
-      Text(
-        text = formatDuration(elapsed),
-        color = Color.White,
-        fontSize = 2.em,
-      )
+      Column(
+        Modifier
+          .onKeyEvent { e ->
+            if (e.type == KeyEventType.KeyDown && e.key == Key.Escape) {
+              return@onKeyEvent complete
+                ?.invoke(Unit)
+                ?.let { true }
+                ?: false
+            }
+            false
+          }.focusable()
+          .focusRequester(focusRequester),
+        horizontalAlignment = Alignment.CenterHorizontally,
+      ) {
+        Text(
+          modifier =
+            Modifier
+              .clip(RoundedCornerShape(10.dp))
+              .clickable { complete?.invoke(Unit) }
+              .padding(vertical = 5.dp, horizontal = 20.dp),
+          text = "Resume",
+          fontSize = 2.em,
+          color = Color.White,
+        )
+        Spacer(
+          Modifier.size(width = 0.dp, height = 10.dp),
+        )
+        Text(
+          text = "Quit",
+          modifier =
+            Modifier.clickable {
+              if (complete != null) {
+                cancelGame()
+                complete(Unit)
+              }
+            },
+          color = Color.White,
+          fontSize = 2.em,
+        )
+      }
+      Box(
+        Modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomCenter,
+      ) {
+        Text(
+          text = formatDuration(elapsed),
+          color = Color.White,
+          fontSize = 1.5.em,
+        )
+      }
     }
   }
 }
