@@ -94,8 +94,8 @@ public sealed interface CellClick<out T : Any> {
 
 public interface GridRenderer {
   public companion object {
-    public fun hexOf(): GridRenderer =
-      HexGridRenderer()
+    public val hex: GridRenderer =
+      HexGridRenderer
   }
 
   @Composable
@@ -104,7 +104,7 @@ public interface GridRenderer {
   ): Flow<CellClick<T>>
 }
 
-private class HexGridRenderer : GridRenderer {
+private object HexGridRenderer : GridRenderer {
   @Composable
   override fun <T : Any> Grid(
     rows: List<List<Cell<T>>>,

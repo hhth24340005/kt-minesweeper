@@ -5,8 +5,6 @@ import io.github.hhth24340005.minesweeper.logic.hexGridOf
 
 context(renderer: RendererScope)
 public suspend fun useApp() {
-  val gridRenderer = GridRenderer.hexOf()
-
   while (true) {
     while (true) {
       when (useTitle()) {
@@ -16,7 +14,7 @@ public suspend fun useApp() {
       }
     }
     useGame(
-      gridRenderer = gridRenderer,
+      gridRenderer = GridRenderer.hex,
       uninitializedStage = stageOf(),
     )
   }
