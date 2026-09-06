@@ -46,15 +46,15 @@ import kotlinx.coroutines.launch
 import kotlin.let
 import kotlin.time.Duration
 
-@Composable
-public fun Game(
+context(renderer: RendererScope)
+public suspend fun useGame(
   gridRenderer: GridRenderer,
   uninitializedStage: MinesweeperStage.Uninitialized,
-): Deferred<GameResult> =
-  LaunchedRenderer(uninitializedStage) {
-    val stopwatch = Stopwatch()
-    val stage =
-      renderAndGetFirst {
+): GameResult {
+  val stopwatch = Stopwatch()
+  val stage =
+    renderer
+      .renderAndGetFirst {
         val clicks =
           gridRenderer
             .Grid(
@@ -83,19 +83,19 @@ public fun Game(
             }
           }
         }
-      }.getOrElse { return@LaunchedRenderer it }
-    render {
-      val clicks =
-        gridRenderer.Grid(
-          stage.rows.map {
-            it.map { cell ->
-              Cell(cell, cell.status, cellHighlightOf(cell, stage))
-            }
-          },
-        )
-      stage.play(clicks, stopwatch = stopwatch)
-    }
+      }.getOrElse { return it }
+  return renderer.render {
+    val clicks =
+      gridRenderer.Grid(
+        stage.rows.map {
+          it.map { cell ->
+            Cell(cell, cell.status, cellHighlightOf(cell, stage))
+          }
+        },
+      )
+    stage.play(clicks, stopwatch = stopwatch)
   }
+}
 
 public sealed interface GameResult {
   public data object Win : GameResult

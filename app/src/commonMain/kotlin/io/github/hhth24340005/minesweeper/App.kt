@@ -13,19 +13,17 @@ public fun App(): Job =
     val gridComposer = GridRenderer.hexOf()
 
     while (true) {
-      when (render { Title() }) {
+      when (useTitle()) {
         is TitleResult.Start -> {
-          val stage = stageOf()
-
-          render {
-            Game(
-              gridRenderer = gridComposer,
-              uninitializedStage = stage,
-            )
-          }
+          useGame(
+            gridRenderer = gridComposer,
+            uninitializedStage = stageOf(),
+          )
         }
 
-        is TitleResult.Leaderboard -> {}
+        is TitleResult.Leaderboard -> {
+          continue
+        }
 
         is TitleResult.Quit -> {
           break
