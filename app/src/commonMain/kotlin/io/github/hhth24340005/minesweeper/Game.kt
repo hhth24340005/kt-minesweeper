@@ -26,6 +26,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -226,6 +227,7 @@ private suspend fun awaitPause() =
           text = "Pause",
           fontWeight = FontWeight.Bold,
           fontSize = 1.em,
+          fontFamily = FontFamily.Serif,
         )
       }
     }
@@ -270,6 +272,7 @@ private suspend fun awaitPauseDismissal(
         text = "Resume",
         fontSize = 2.em,
         color = Color.White,
+        fontFamily = FontFamily.Serif,
       )
       Spacer(
         Modifier.size(width = 0.dp, height = 10.dp),
@@ -285,6 +288,7 @@ private suspend fun awaitPauseDismissal(
           },
         color = Color.White,
         fontSize = 2.em,
+        fontFamily = FontFamily.Serif,
       )
     }
     Box(
@@ -295,6 +299,7 @@ private suspend fun awaitPauseDismissal(
         text = formatDuration(elapsed),
         color = Color.White,
         fontSize = 1.5.em,
+        fontFamily = FontFamily.Serif,
       )
     }
   }
@@ -311,6 +316,7 @@ private suspend fun RendererScope.showWinOverlay(): GameResult {
       "You win!",
       fontSize = 4.em,
       color = Color.White,
+      fontFamily = FontFamily.Serif,
       modifier = Modifier.clickable { complete?.invoke(Unit) },
     )
   }
@@ -328,6 +334,7 @@ private suspend fun RendererScope.showLoseOverlay(): GameResult {
       "You lose!",
       fontSize = 4.em,
       color = Color.White,
+      fontFamily = FontFamily.Serif,
       modifier = Modifier.clickable { complete?.invoke(Unit) },
     )
   }
