@@ -10,7 +10,10 @@ plugins {
 kotlin {
   explicitApi()
   compilerOptions {
-    freeCompilerArgs.add("-Xexplicit-context-arguments")
+    freeCompilerArgs.addAll(
+      "-Xexplicit-context-arguments",
+      "-Xreturn-value-checker=check",
+    )
   }
 
   jvm()

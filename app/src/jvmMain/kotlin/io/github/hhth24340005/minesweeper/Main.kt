@@ -1,6 +1,5 @@
 package io.github.hhth24340005.minesweeper
 
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -15,11 +14,11 @@ public fun main() {
       resizable = false,
       title = "Minesweeper",
     ) {
-      val appJob = App()
-      LaunchedEffect(appJob) {
-        appJob.join()
-        exitApplication()
-      }
+      val _ =
+        LaunchedRenderer(Unit) {
+          useApp()
+          exitApplication()
+        }
     }
   }
 }
