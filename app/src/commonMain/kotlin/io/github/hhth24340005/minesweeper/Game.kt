@@ -62,8 +62,8 @@ public suspend fun useGame(
             ).filterIsLeft()
         remember(clicks) {
           flow {
-            val gameCancellation = Job()
             while (true) {
+              val gameCancellation = Job()
               race {
                 async { clicks.first() }
                   .onAwait { (identity) ->
