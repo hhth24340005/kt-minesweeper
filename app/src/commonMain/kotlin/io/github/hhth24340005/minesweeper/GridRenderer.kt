@@ -14,22 +14,32 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.FloatState
+import androidx.compose.runtime.MutableFloatState
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isTertiaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
@@ -59,7 +69,6 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.merge
 import org.jetbrains.compose.resources.vectorResource
-import kotlin.collections.fold
 
 public data class Cell<T : Any>(
   public val identity: T,
@@ -118,7 +127,7 @@ private object HexGridRenderer : GridRenderer {
     }
 
   @Composable
-  private inline fun <R : Any> GridBox(
+  private fun <R : Any> GridBox(
     paddingX: Dp =
       maxOf(
         vectorResource(Res.drawable.hex_revealed).defaultWidth / 4f,
@@ -134,15 +143,19 @@ private object HexGridRenderer : GridRenderer {
     content: @Composable () -> R,
   ): R {
     lateinit var ret: R
+    val scale = remember { mutableFloatStateOf(1f) }
+    val offset = remember { mutableStateOf(Offset.Zero) }
     Box(
-      modifier =
-        Modifier
-          .padding(paddingX, paddingY)
-          .background(color, shape)
-          .padding(paddingX, paddingY)
-          .clipToBounds(),
+      Modifier
+        .padding(paddingX, paddingY)
+        .background(color, shape)
+        .padding(paddingX, paddingY)
+        .clipToBounds()
+        .panZoomInput(scale, offset),
     ) {
-      ret = content()
+      Box(Modifier.panZoomTransform(scale, offset)) {
+        ret = content()
+      }
     }
     return ret
   }
@@ -298,6 +311,74 @@ private object HexGridRenderer : GridRenderer {
     }
   }
 }
+
+private fun Modifier.panZoomInput(
+  scale: MutableFloatState,
+  offset: MutableState<Offset>,
+  minScale: Float = 0.2f,
+  maxScale: Float = 5f,
+): Modifier =
+  pointerInput(Unit) {
+    awaitPointerEventScope {
+      while (true) {
+        val event = awaitPointerEvent()
+        when (event.type) {
+          PointerEventType.Scroll -> {
+            val change = event.changes.first()
+            val scrollY = change.scrollDelta.y
+            if (scrollY != 0f) {
+              val old = scale.floatValue
+              val factor = if (scrollY < 0f) 1.1f else 1f / 1.1f
+              val new = (old * factor).coerceIn(minScale, maxScale)
+              val realFactor = new / old
+              val cursor = change.position
+              offset.value =
+                cursor * (1f - realFactor) + offset.value * realFactor
+              scale.value = new
+              change.consume()
+            }
+          }
+
+          PointerEventType.Press -> {
+            if (event.buttons.isTertiaryPressed) {
+              var lastPos =
+                event.changes
+                  .first()
+                  .position
+              event.changes.forEach { it.consume() }
+              while (true) {
+                val drag = awaitPointerEvent()
+                if (!drag.buttons.isTertiaryPressed) {
+                  break
+                }
+                val pos =
+                  drag.changes
+                    .first()
+                    .position
+                offset.value += pos - lastPos
+                lastPos = pos
+                drag.changes.forEach { it.consume() }
+              }
+            }
+          }
+
+          else -> {}
+        }
+      }
+    }
+  }
+
+private fun Modifier.panZoomTransform(
+  scale: FloatState,
+  offset: State<Offset>,
+): Modifier =
+  graphicsLayer {
+    scaleX = scale.value
+    scaleY = scale.value
+    translationX = offset.value.x
+    translationY = offset.value.y
+    transformOrigin = TransformOrigin(0f, 0f)
+  }
 
 private fun Modifier.leftClickable(
   onClick: () -> Unit,
