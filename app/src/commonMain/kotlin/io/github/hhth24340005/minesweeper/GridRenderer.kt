@@ -9,7 +9,6 @@ import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
@@ -32,6 +32,7 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -58,6 +59,7 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.merge
 import org.jetbrains.compose.resources.vectorResource
+import kotlin.collections.fold
 
 public data class Cell<T : Any>(
   public val identity: T,
@@ -135,8 +137,10 @@ private object HexGridRenderer : GridRenderer {
     Box(
       modifier =
         Modifier
+          .padding(paddingX, paddingY)
           .background(color, shape)
-          .padding(paddingX, paddingY),
+          .padding(paddingX, paddingY)
+          .clipToBounds(),
     ) {
       ret = content()
     }
@@ -159,16 +163,17 @@ private object HexGridRenderer : GridRenderer {
             }
           }
       },
-    ) { measurables, constraints ->
-      val placeable = measurables.map { it.measure(constraints) }
+    ) { measurables, _ ->
+      val rowConstraints = Constraints()
+      val placeable = measurables.map { it.measure(rowConstraints) }
       val cellH = placeable.maxOf { it.height }
       val rowSpacing = cellH * 3 / 4
-      val totalH = rowSpacing * (placeable.size - 1) + cellH
-      val maxW = placeable.maxOf { it.width }
+      val maxWidth = placeable.maxOf { it.width }
+      val maxHeight = rowSpacing * (placeable.size - 1) + cellH
 
-      layout(maxW, totalH) {
+      layout(maxWidth, maxHeight) {
         placeable.forEachIndexed { i, p ->
-          p.place((maxW - p.width) / 2, i * rowSpacing)
+          p.place((maxWidth - p.width) / 2, i * rowSpacing)
         }
       }
     }
@@ -180,7 +185,7 @@ private object HexGridRenderer : GridRenderer {
     row: List<Cell<T>>,
   ): Flow<CellClick<T>> {
     lateinit var ret: Flow<CellClick<T>>
-    Row {
+    Layout(content = {
       ret =
         row
           .mapIndexed { colIndex, (identity, status, highlight) ->
@@ -195,10 +200,24 @@ private object HexGridRenderer : GridRenderer {
                 }
             }
           }.merge()
+    }) { measurable, _ ->
+      val cellConstraints = Constraints()
+      val placeable = measurable.map { it.measure(cellConstraints) }
+      val maxWidth = placeable.sumOf { it.width }
+      val maxHeight = placeable.maxOf { it.height }
+      layout(maxWidth, maxHeight) {
+        val _ =
+          placeable.fold(0) { acc, placeable ->
+            placeable.place(
+              x = acc,
+              y = 0,
+            )
+            acc + placeable.width
+          }
+      }
     }
     return ret
   }
-
 
   @Composable
   private fun Cell(

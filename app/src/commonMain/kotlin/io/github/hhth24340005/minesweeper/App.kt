@@ -22,7 +22,7 @@ public suspend fun useApp() {
 
 private fun stageOf(): MinesweeperStage.Uninitialized =
   MinesweeperStage.prepare(
-    width = 9,
+    width = 19,
     height = 9,
     gridFactory = ::hexGridOf,
     mineDensity = 0.2,
