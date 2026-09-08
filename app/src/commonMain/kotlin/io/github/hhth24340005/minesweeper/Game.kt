@@ -115,17 +115,18 @@ private suspend fun MinesweeperStage.Uninitialized.initialize():
           .Grid(rows.map { it.map(::Cell) })
           .filterIsLeft()
       LaunchedRenderer(Unit) {
+        val gameCancellation = Job()
         while (true) {
-          val gameCancellation = Job()
           val ret =
             race<Either<GameResult, MinesweeperStage>?> {
               async { clicks.first() }
                 .onAwait { (identity) ->
                   initialize(identity).right()
                 }
-              gameCancellation.onJoin {
-                GameResult.Canceled.left()
-              }
+              launch { gameCancellation.join() }
+                .onJoin {
+                  GameResult.Canceled.left()
+                }
               launch { awaitPause() }
                 .onJoin {
                   awaitPauseDismissal(
