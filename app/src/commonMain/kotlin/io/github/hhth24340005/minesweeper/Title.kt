@@ -29,134 +29,187 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import arrow.core.getOrElse
+import arrow.core.left
+import arrow.core.right
 
 context(renderer: RendererScope)
-public suspend fun useTitle(): TitleResult =
-  renderer.renderCompletable(
-    alignment = Alignment.CenterEnd,
-  ) { complete ->
-    Column {
-      val difficulties =
-        listOf(
-          GameDifficulty.Beginner,
-          GameDifficulty.Intermediate,
-          GameDifficulty.Expert,
-        )
-      var selection by remember { mutableStateOf(difficulties[0]) }
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Box(
-          modifier =
-            Modifier
-              .clip(HexagonShape)
-              .background(Color.Gray)
-              .padding(horizontal = 150.dp, vertical = 200.dp),
-          contentAlignment = Alignment.Center,
-        ) {
-          Column {
-            Text(
-              "Hexa",
-              fontSize = 3.em,
-              fontFamily = FontFamily.Serif,
-              color = Color.White,
+public suspend fun useTitle(): TitleResult {
+  while (true) {
+    return renderer
+      .renderCompletable(
+        alignment = Alignment.CenterEnd,
+      ) { complete ->
+        Column {
+          val difficulties =
+            listOf(
+              GameDifficulty.Beginner,
+              GameDifficulty.Intermediate,
+              GameDifficulty.Expert,
             )
-            Text(
-              "Sweeper",
-              fontSize = 3.em,
-              fontFamily = FontFamily.Serif,
-              color = Color.White,
-            )
+          var selection by remember { mutableStateOf(difficulties[0]) }
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+          ) {
+            Box(
+              modifier =
+                Modifier
+                  .clip(HexagonShape)
+                  .background(Color.Gray)
+                  .padding(horizontal = 150.dp, vertical = 200.dp),
+              contentAlignment = Alignment.Center,
+            ) {
+              Column {
+                Text(
+                  "Hexa",
+                  fontSize = 3.em,
+                  fontFamily = FontFamily.Serif,
+                  color = Color.White,
+                )
+                Text(
+                  "Sweeper",
+                  fontSize = 3.em,
+                  fontFamily = FontFamily.Serif,
+                  color = Color.White,
+                )
+              }
+            }
+            Column(
+              Modifier
+                .fillMaxHeight(fraction = 0.7f)
+                .padding(end = 100.dp),
+              horizontalAlignment = Alignment.CenterHorizontally,
+              verticalArrangement = Arrangement.SpaceEvenly,
+            ) {
+              Text(
+                "Start",
+                modifier =
+                  Modifier
+                    .offset(x = 0.dp)
+                    .clip(HexagonShape)
+                    .clickable {
+                      complete?.invoke(
+                        TitleResult.Start(selection).right(),
+                      )
+                    }.background(Color.LightGray)
+                    .padding(horizontal = 50.dp, vertical = 20.dp),
+                fontSize = 3.em,
+                fontFamily = FontFamily.Serif,
+              )
+              Text(
+                "Data",
+                modifier =
+                  Modifier
+                    .offset(x = 30.dp)
+                    .clip(HexagonShape)
+                    .clickable {
+                      complete?.invoke(
+                        TitleModalResult.Leaderboard.left(),
+                      )
+                    }.background(Color.LightGray)
+                    .padding(horizontal = 50.dp, vertical = 20.dp),
+                fontSize = 3.em,
+                fontFamily = FontFamily.Serif,
+              )
+              Text(
+                "Quit",
+                modifier =
+                  Modifier
+                    .offset(x = 60.dp)
+                    .clip(HexagonShape)
+                    .clickable {
+                      complete?.invoke(TitleResult.Quit.right())
+                    }.background(Color.LightGray)
+                    .padding(horizontal = 50.dp, vertical = 20.dp),
+                fontSize = 3.em,
+                fontFamily = FontFamily.Serif,
+              )
+            }
+          }
+          Spacer(Modifier.padding(vertical = 20.dp))
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+          ) {
+            difficulties.forEach { difficulty ->
+              Text(
+                difficulty.label,
+                modifier =
+                  Modifier
+                    .clip(HexagonShape)
+                    .clickable {
+                      selection = difficulty
+                    }.background(
+                      if (difficulty == selection) {
+                        Color.Gray
+                      } else {
+                        Color.LightGray
+                      },
+                    ).padding(20.dp),
+                fontSize = 2.em,
+                fontFamily = FontFamily.Serif,
+                color =
+                  if (difficulty == selection) {
+                    Color.White
+                  } else {
+                    Color.Black
+                  },
+              )
+            }
           }
         }
-        Column(
-          Modifier
-            .fillMaxHeight(fraction = 0.7f)
-            .padding(end = 100.dp),
-          horizontalAlignment = Alignment.CenterHorizontally,
-          verticalArrangement = Arrangement.SpaceEvenly,
-        ) {
-          Text(
-            "Start",
-            modifier =
-              Modifier
-                .offset(x = 0.dp)
-                .clip(HexagonShape)
-                .clickable {
-                  complete?.invoke(TitleResult.Start(selection))
-                }.background(Color.LightGray)
-                .padding(horizontal = 50.dp, vertical = 20.dp),
-            fontSize = 3.em,
-            fontFamily = FontFamily.Serif,
-          )
-//          Text(
-//            "Data",
-//            modifier =
-//              Modifier
-//                .offset(x = 30.dp)
-//                .clip(HexagonShape)
-//                .clickable {
-//                  complete?.invoke(TitleResult.Leaderboard)
-//                }.background(Color.LightGray)
-//                .padding(horizontal = 50.dp, vertical = 20.dp),
-//            fontSize = 3.em,
-//            fontFamily = FontFamily.Serif,
-//          )
-          Text(
-            "Quit",
-            modifier =
-              Modifier
-                .offset(x = 60.dp)
-                .clip(HexagonShape)
-                .clickable {
-                  complete?.invoke(TitleResult.Quit)
-                }.background(Color.LightGray)
-                .padding(horizontal = 50.dp, vertical = 20.dp),
-            fontSize = 3.em,
-            fontFamily = FontFamily.Serif,
-          )
+      }.getOrElse {
+        when (it) {
+          TitleModalResult.Leaderboard -> {
+            renderer.renderCompletable { complete ->
+              Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+              ) {
+                Text(
+                  "Not implemented yet!",
+                  color = Color.Black,
+                  fontFamily = FontFamily.Serif,
+                  fontSize = 2.em,
+                )
+                Spacer(Modifier.padding(vertical = 20.dp))
+                Box(
+                  modifier =
+                    Modifier
+                      .clip(HexagonShape)
+                      .background(Color.Gray)
+                      .clickable {
+                        complete?.invoke(Unit)
+                      }.padding(
+                        horizontal = 50.dp,
+                        vertical = 20.dp,
+                      ),
+                ) {
+                  Text(
+                    "Go back",
+                    color = Color.White,
+                    fontSize = 2.em,
+                    fontFamily = FontFamily.Serif,
+                  )
+                }
+              }
+            }
+          }
         }
+        continue
       }
-      Spacer(Modifier.padding(vertical = 20.dp))
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-      ) {
-        difficulties.forEach { difficulty ->
-          Text(
-            difficulty.label,
-            modifier =
-              Modifier
-                .clip(HexagonShape)
-                .clickable {
-                  selection = difficulty
-                }.background(
-                  if (difficulty == selection) {
-                    Color.Gray
-                  } else {
-                    Color.LightGray
-                  },
-                ).padding(horizontal = 50.dp, vertical = 20.dp),
-            fontSize = 2.em,
-            fontFamily = FontFamily.Serif,
-            color =
-              if (difficulty == selection) {
-                Color.White
-              } else {
-                Color.Black
-              },
-          )
-        }
-      }
-    }
   }
+}
 
 public sealed interface TitleResult {
   public data class Start(public val difficulty: GameDifficulty) : TitleResult
 
   public data object Quit : TitleResult
+}
+
+private sealed interface TitleModalResult {
+  data object Leaderboard : TitleModalResult
 }
 
 public interface GameDifficulty {
