@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -30,6 +29,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import arrow.core.Either
 import arrow.core.getOrElse
 import arrow.core.left
 import arrow.core.right
@@ -37,65 +37,20 @@ import io.github.hhth24340005.minesweeper.CellClick.Companion.filterIsLeft
 import io.github.hhth24340005.minesweeper.logic.CellState
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage
 import io.github.hhth24340005.minesweeper.logic.MinesweeperStage.Status
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlin.let
 import kotlin.time.Duration
 
-context(renderer: RendererScope)
+context(renderer: RendererScope, gridRenderer: GridRenderer)
 public suspend fun useGame(
-  gridRenderer: GridRenderer,
   uninitializedStage: MinesweeperStage.Uninitialized,
 ): GameResult {
-  val stopwatch = Stopwatch()
-  val stage =
-    renderer
-      .renderAndGetFirst {
-        val clicks =
-          gridRenderer
-            .Grid(
-              uninitializedStage.rows.map { it.map(::Cell) },
-            ).filterIsLeft()
-        remember(clicks) {
-          flow {
-            while (true) {
-              val gameCancellation = Job()
-              race {
-                async { clicks.first() }
-                  .onAwait { (identity) ->
-                    emit(uninitializedStage.initialize(identity).right())
-                  }
-                gameCancellation.onJoin {
-                  emit(GameResult.Canceled.left())
-                }
-                launch { awaitPause() }
-                  .onJoin {
-                    awaitPauseDismissal(
-                      stopwatch = stopwatch,
-                      cancelGame = { gameCancellation.complete() },
-                    )
-                  }
-              }
-            }
-          }
-        }
-      }.getOrElse { return it }
-  return renderer.render {
-    val clicks =
-      gridRenderer.Grid(
-        stage.rows.map {
-          it.map { cell ->
-            Cell(cell, cell.status, cellHighlightOf(cell, stage))
-          }
-        },
-      )
-    stage.play(clicks, stopwatch = stopwatch)
-  }
+  val stage = uninitializedStage.initialize().getOrElse { return it }
+  return stage.play()
 }
 
 public sealed interface GameResult {
@@ -147,23 +102,74 @@ private fun cellHighlightOf(
   }
 }
 
-@Composable
-context(stopwatch: Stopwatch)
-private fun MinesweeperStage.play(
-  clicks: Flow<CellClick<MinesweeperStage.Cell>>,
-): Deferred<GameResult> =
-  LaunchedRenderer(Unit) {
-    val gameCancellation = Job()
-    race {
-      whileActive {
-        runService(
-          clicks,
-          cancelGame = { gameCancellation.complete() },
-        )
+context(
+  renderer: RendererScope,
+  gridRenderer: GridRenderer,
+)
+private suspend fun MinesweeperStage.Uninitialized.initialize():
+  Either<GameResult, MinesweeperStage> =
+  renderer
+    .render {
+      val clicks =
+        gridRenderer
+          .Grid(rows.map { it.map(::Cell) })
+          .filterIsLeft()
+      LaunchedRenderer(Unit) {
+        while (true) {
+          val gameCancellation = Job()
+          val ret =
+            race<Either<GameResult, MinesweeperStage>?> {
+              async { clicks.first() }
+                .onAwait { (identity) ->
+                  initialize(identity).right()
+                }
+              gameCancellation.onJoin {
+                GameResult.Canceled.left()
+              }
+              launch { awaitPause() }
+                .onJoin {
+                  awaitPauseDismissal(
+                    stopwatch = Stopwatch(),
+                    cancelGame = { gameCancellation.complete() },
+                  )
+                  null
+                }
+            } ?: continue
+          return@LaunchedRenderer ret
+        }
+        @Suppress("KotlinUnreachableCode")
+        error("Unreachable")
       }
-      gameCancellation.onJoin { GameResult.Canceled }
-      launch { awaitWin() }.onJoin { showWinOverlay() }
-      launch { awaitLose() }.onJoin { showLoseOverlay() }
+    }
+
+context(
+  renderer: RendererScope,
+  gridRenderer: GridRenderer
+)
+private suspend fun MinesweeperStage.play(): GameResult =
+  renderer.render {
+    val clicks =
+      gridRenderer.Grid(
+        rows.map {
+          it.map { cell ->
+            Cell(cell, cell.status, cellHighlightOf(cell, this))
+          }
+        },
+      )
+    LaunchedRenderer(Unit) {
+      val gameCancellation = Job()
+      race {
+        whileActive {
+          runService(
+            clicks,
+            stopwatch = Stopwatch(),
+            cancelGame = { gameCancellation.complete() },
+          )
+        }
+        gameCancellation.onJoin { GameResult.Canceled }
+        launch { awaitWin() }.onJoin { showWinOverlay() }
+        launch { awaitLose() }.onJoin { showLoseOverlay() }
+      }
     }
   }
 
