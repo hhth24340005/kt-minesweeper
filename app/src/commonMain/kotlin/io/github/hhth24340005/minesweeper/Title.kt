@@ -8,9 +8,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,89 +35,156 @@ public suspend fun useTitle(): TitleResult =
   renderer.renderCompletable(
     alignment = Alignment.CenterEnd,
   ) { complete ->
-    Row(
-      verticalAlignment = Alignment.CenterVertically,
-    ) {
-      Box(
-        modifier =
-          Modifier
-            .clip(HexagonShape)
-            .background(Color.Gray)
-            .padding(horizontal = 150.dp, vertical = 200.dp),
-        contentAlignment = Alignment.Center,
+    Column {
+      val difficulties =
+        listOf(
+          GameDifficulty.Beginner,
+          GameDifficulty.Intermediate,
+          GameDifficulty.Expert,
+        )
+      var selection by remember { mutableStateOf(difficulties[0]) }
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically,
       ) {
-        Column {
+        Box(
+          modifier =
+            Modifier
+              .clip(HexagonShape)
+              .background(Color.Gray)
+              .padding(horizontal = 150.dp, vertical = 200.dp),
+          contentAlignment = Alignment.Center,
+        ) {
+          Column {
+            Text(
+              "Hexa",
+              fontSize = 3.em,
+              fontFamily = FontFamily.Serif,
+              color = Color.White,
+            )
+            Text(
+              "Sweeper",
+              fontSize = 3.em,
+              fontFamily = FontFamily.Serif,
+              color = Color.White,
+            )
+          }
+        }
+        Column(
+          Modifier
+            .fillMaxHeight(fraction = 0.7f)
+            .padding(end = 100.dp),
+          horizontalAlignment = Alignment.CenterHorizontally,
+          verticalArrangement = Arrangement.SpaceEvenly,
+        ) {
           Text(
-            "Hexa",
+            "Start",
+            modifier =
+              Modifier
+                .offset(x = 0.dp)
+                .clip(HexagonShape)
+                .clickable {
+                  complete?.invoke(TitleResult.Start(selection))
+                }.background(Color.LightGray)
+                .padding(horizontal = 50.dp, vertical = 20.dp),
             fontSize = 3.em,
             fontFamily = FontFamily.Serif,
-            color = Color.White,
           )
+//          Text(
+//            "Data",
+//            modifier =
+//              Modifier
+//                .offset(x = 30.dp)
+//                .clip(HexagonShape)
+//                .clickable {
+//                  complete?.invoke(TitleResult.Leaderboard)
+//                }.background(Color.LightGray)
+//                .padding(horizontal = 50.dp, vertical = 20.dp),
+//            fontSize = 3.em,
+//            fontFamily = FontFamily.Serif,
+//          )
           Text(
-            "Sweeper",
+            "Quit",
+            modifier =
+              Modifier
+                .offset(x = 60.dp)
+                .clip(HexagonShape)
+                .clickable {
+                  complete?.invoke(TitleResult.Quit)
+                }.background(Color.LightGray)
+                .padding(horizontal = 50.dp, vertical = 20.dp),
             fontSize = 3.em,
             fontFamily = FontFamily.Serif,
-            color = Color.White,
           )
         }
       }
-      Spacer(Modifier.padding(horizontal = 40.dp))
-      Column(
-        Modifier
-          .fillMaxHeight(fraction = 0.7f)
-          .padding(end = 100.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceEvenly,
+      Spacer(Modifier.padding(vertical = 20.dp))
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
       ) {
-        Text(
-          "Start",
-          modifier =
-            Modifier
-              .offset(x = 0.dp)
-              .clip(HexagonShape)
-              .clickable {
-                complete?.invoke(TitleResult.Start)
-              }.background(Color.LightGray)
-              .padding(horizontal = 50.dp, vertical = 20.dp),
-          fontSize = 3.em,
-          fontFamily = FontFamily.Serif,
-        )
-        Text(
-          "Data",
-          modifier =
-            Modifier
-              .offset(x = 30.dp)
-              .clip(HexagonShape)
-              .clickable {
-                complete?.invoke(TitleResult.Leaderboard)
-              }.background(Color.LightGray)
-              .padding(horizontal = 50.dp, vertical = 20.dp),
-          fontSize = 3.em,
-          fontFamily = FontFamily.Serif,
-        )
-        Text(
-          "Quit",
-          modifier =
-            Modifier
-              .offset(x = 60.dp)
-              .clip(HexagonShape)
-              .clickable {
-                complete?.invoke(TitleResult.Quit)
-              }.background(Color.LightGray)
-              .padding(horizontal = 50.dp, vertical = 20.dp),
-          fontSize = 3.em,
-          fontFamily = FontFamily.Serif,
-        )
+        difficulties.forEach { difficulty ->
+          Text(
+            difficulty.label,
+            modifier =
+              Modifier
+                .clip(HexagonShape)
+                .clickable {
+                  selection = difficulty
+                }.background(
+                  if (difficulty == selection) {
+                    Color.Gray
+                  } else {
+                    Color.LightGray
+                  },
+                ).padding(horizontal = 50.dp, vertical = 20.dp),
+            fontSize = 2.em,
+            fontFamily = FontFamily.Serif,
+            color =
+              if (difficulty == selection) {
+                Color.White
+              } else {
+                Color.Black
+              },
+          )
+        }
       }
     }
   }
 
 public sealed interface TitleResult {
-  public data object Start : TitleResult
-
-  public data object Leaderboard : TitleResult
+  public data class Start(public val difficulty: GameDifficulty) : TitleResult
 
   public data object Quit : TitleResult
+}
+
+public interface GameDifficulty {
+  public val label: String
+  public val width: Int
+  public val height: Int
+  public val mineDensity: Double
+
+  public data object Beginner : GameDifficulty {
+    override val label: String = "Beginner"
+    override val width: Int = 5
+    override val height: Int = 5
+    override val mineDensity: Double = 0.3
+  }
+
+  public data object Intermediate : GameDifficulty {
+    override val label: String = "Intermediate"
+    override val width: Int = 9
+    override val height: Int = 9
+    override val mineDensity: Double = 0.2
+  }
+
+  public data object Expert : GameDifficulty {
+    override val label: String = "Expert"
+    override val width: Int = 19
+    override val height: Int = 19
+    override val mineDensity: Double = 0.2
+  }
 }
 
 private object HexagonShape : Shape {

@@ -6,24 +6,24 @@ import io.github.hhth24340005.minesweeper.logic.hexGridOf
 context(renderer: RendererScope)
 public suspend fun useApp() {
   while (true) {
-    while (true) {
-      when (useTitle()) {
-        is TitleResult.Start -> break
-        is TitleResult.Leaderboard -> continue
+    val difficulty =
+      when (val result = useTitle()) {
+        is TitleResult.Start -> result.difficulty
         is TitleResult.Quit -> return
       }
-    }
     useGame(
       gridRenderer = GridRenderer.hex,
-      uninitializedStage = stageOf(),
+      uninitializedStage = stageOf(difficulty),
     )
   }
 }
 
-private fun stageOf(): MinesweeperStage.Uninitialized =
+private fun stageOf(
+  difficulty: GameDifficulty,
+): MinesweeperStage.Uninitialized =
   MinesweeperStage.prepare(
-    width = 19,
-    height = 19,
+    width = difficulty.width,
+    height = difficulty.height,
     gridFactory = ::hexGridOf,
-    mineDensity = 0.2,
+    mineDensity = difficulty.mineDensity,
   )
